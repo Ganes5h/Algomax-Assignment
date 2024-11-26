@@ -41,105 +41,83 @@ const validateTenantInput = (input) => {
   return errors;
 };
 
-exports.createEvent = async (req, res) => {
+exports.createTenant = async (req, res) => {
     try {
-      upload.array('images', 5)(req, res, async (err) => { 
-        if (err) {
-          return res.status(400).json({ message: 'File upload error', error: err.message });
-        }
+      const {
+        name,
+        business_email,
+        domain,
+        contact_person_name,
+        contact_person_phone,
+        business_registration_number,
+        brand_logo_url,
+        brand_primary_color,
+        brand_secondary_color,
+        created_by
+      } = req.body;
   
-        const { 
-          title,
-          description,
-          location,
-          start_datetime,
-          end_datetime,
-          category,
-          ticket_price,
-          total_tickets,
-          ticket_type = 'standard',
-          age_restriction,
-          online_event,
-          event_link
-        } = req.body;
+      // Validate inputs
+      const validationErrors = validateTenantInput(req.body);
+      if (validationErrors && validationErrors.length > 0) {
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: validationErrors,
+        });
+      }
   
-        const tenant_id = req.params.id;
+      // Check if email or domain already exists
+      const [existingTenant] = await query(
+        'SELECT id FROM tenants WHERE business_email = ? OR domain = ?',
+        [business_email, domain]
+      );
   
-        // Validate input
-        const validationErrors = validateEventInput(req.body);
-        if (validationErrors.length > 0) {
-          return res.status(400).json({ 
-            message: 'Validation failed', 
-            errors: validationErrors 
-          });
-        }
+      if (existingTenant) {
+        return res.status(409).json({
+          message: 'Tenant with this email or domain already exists',
+        });
+      }
   
-        const imagePaths = req.files.map((file) => file.path);
-  
-        const eventQuery = {
+      // Insert tenant into the database
+      const queries = [
+        {
           sql: `
-            INSERT INTO events 
-            (tenant_id, organizer_id, title, description, location, 
-            start_datetime, end_datetime, category, ticket_price, 
-            total_tickets, available_tickets, status, age_restriction, 
-            online_event, event_link, images, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            INSERT INTO tenants 
+            (name, business_email, domain, contact_person_name, 
+             contact_person_phone, business_registration_number, 
+             brand_logo_url, brand_primary_color, brand_secondary_color,
+             created_by, admin_verification_status, verification_status, active, subscription_status, trial_ends_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', false, 'inactive', DATE_ADD(NOW(), INTERVAL 14 DAY))
           `,
           params: [
-            tenant_id,
-            req.user?.id || null,
-            title,
-            description,
-            location,
-            start_datetime,
-            end_datetime,
-            category,
-            ticket_price,
-            total_tickets,
-            total_tickets,
-            'draft',
-            age_restriction || null,
-            online_event !== undefined ? online_event : false,
-            event_link || null,
-            JSON.stringify(imagePaths)
+            name,
+            business_email,
+            domain,
+            contact_person_name,
+            contact_person_phone,
+            business_registration_number,
+            brand_logo_url,
+            brand_primary_color,
+            brand_secondary_color,
+            created_by
           ]
-        };
+        }
+      ];
   
-        const ticketQuery = {
-          sql: `
-            INSERT INTO tickets 
-            (event_id, ticket_type, quantity, price) 
-            VALUES (?, ?, ?, ?)
-          `,
-          params: null
-        };
+      const [result] = await transaction(queries);
   
-        const [eventResult] = await transaction([eventQuery]);
-        const eventId = eventResult.insertId;
-  
-        ticketQuery.params = [
-          eventId, 
-          ticket_type, 
-          total_tickets, 
-          ticket_price
-        ];
-        const [ticketResult] = await transaction([ticketQuery]);
-  
-        res.status(201).json({
-          message: 'Event created successfully',
-          eventId: eventId,
-          ticketId: ticketResult.insertId,
-          images: imagePaths
-        });
+      res.status(201).json({
+        message: 'Tenant created successfully. Awaiting admin verification.',
+        tenantId: result.insertId,
       });
     } catch (error) {
-      console.error('Event creation error:', error);
-      res.status(500).json({ 
-        message: 'Event creation failed', 
-        error: error.message 
+      console.error('Tenant creation error:', error);
+      res.status(500).json({
+        message: 'Error creating tenant',
+        error: error.message,
       });
     }
   };
+  
 
   exports.verifyTenant = async (req, res) => {
     try {

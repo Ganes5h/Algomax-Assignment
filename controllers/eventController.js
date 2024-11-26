@@ -370,7 +370,7 @@
 // };
 
 const { query, transaction } = require('../config/config');
-
+const upload = require('../middlewares/upload'); 
 
 // Input validation helper
 const validateEventInput = (input) => {
@@ -409,46 +409,35 @@ const validateEventInput = (input) => {
 
 exports.createEvent = async (req, res) => {
   try {
-    const { 
-      title,
-      description,
-      location,
-      start_datetime,
-      end_datetime,
-      category,
-      ticket_price,
-      total_tickets,
-      ticket_type = 'standard',
-      age_restriction,
-      online_event,
-      event_link
-    } = req.body;
-
     // Fetch tenant_id from URL params
     const tenant_id = req.params.id;
 
-    // Validate input
-    const validationErrors = validateEventInput(req.body);
-    if (validationErrors.length > 0) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors: validationErrors 
+    // Check tenant's admin verification status
+    const tenantStatusQuery = {
+      sql: `SELECT admin_verification_status FROM tenants WHERE id = ?`,
+      params: [tenant_id]
+    };
+
+    const [tenantStatusResult] = await transaction([tenantStatusQuery]);
+
+    if (tenantStatusResult.length === 0) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    const { admin_verification_status } = tenantStatusResult[0];
+    if (admin_verification_status !== 'approved') {
+      return res.status(403).json({ 
+        message: 'Tenant is not approved. Event creation is not allowed.' 
       });
     }
 
-    // Prepare event creation query
-    const eventQuery = {
-      sql: `
-        INSERT INTO events 
-        (tenant_id, organizer_id, title, description, location, 
-        start_datetime, end_datetime, category, ticket_price, 
-        total_tickets, available_tickets, status, age_restriction, 
-        online_event, event_link, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-      `,
-      params: [
-        tenant_id,
-        req.user?.id || null,  // Use null if req.user?.id is undefined
+    // Handle file uploads
+    upload.array('images', 5)(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: 'File upload error', error: err.message });
+      }
+
+      const { 
         title,
         description,
         location,
@@ -457,41 +446,78 @@ exports.createEvent = async (req, res) => {
         category,
         ticket_price,
         total_tickets,
-        total_tickets,  // Initially all tickets are available
-        'draft',  // Default status
-        age_restriction || null,  // If age_restriction is undefined, pass null
-        online_event !== undefined ? online_event : false,  // Ensure online_event is not undefined
-        event_link || null  // If event_link is undefined, pass null
-      ]
-    };
+        ticket_type = 'standard',
+        age_restriction,
+        online_event,
+        event_link
+      } = req.body;
 
-    // Prepare ticket query
-    const ticketQuery = {
-      sql: `
-        INSERT INTO tickets 
-        (event_id, ticket_type, quantity, price) 
-        VALUES (?, ?, ?, ?)
-      `,
-      params: null  // Will be populated after event creation
-    };
+      // Validate input
+      const validationErrors = validateEventInput(req.body);
+      if (validationErrors.length > 0) {
+        return res.status(400).json({ 
+          message: 'Validation failed', 
+          errors: validationErrors 
+        });
+      }
 
-    // Execute transaction
-    const [eventResult] = await transaction([eventQuery]);
-    const eventId = eventResult.insertId;
+      const imagePaths = req.files.map((file) => file.path);
 
-    // Create ticket
-    ticketQuery.params = [
-      eventId, 
-      ticket_type, 
-      total_tickets, 
-      ticket_price
-    ];
-    const [ticketResult] = await transaction([ticketQuery]);
+      const eventQuery = {
+        sql: `
+          INSERT INTO events 
+          (tenant_id, organizer_id, title, description, location, 
+          start_datetime, end_datetime, category, ticket_price, 
+          total_tickets, available_tickets, status, age_restriction, 
+          online_event, event_link, images, created_at, updated_at) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `,
+        params: [
+          tenant_id,
+          req.user?.id || null,
+          title,
+          description,
+          location,
+          start_datetime,
+          end_datetime,
+          category,
+          ticket_price,
+          total_tickets,
+          total_tickets,
+          'draft',
+          age_restriction || null,
+          online_event !== undefined ? online_event : false,
+          event_link || null,
+          JSON.stringify(imagePaths)
+        ]
+      };
 
-    res.status(201).json({
-      message: 'Event created successfully',
-      eventId: eventId,
-      ticketId: ticketResult.insertId
+      const ticketQuery = {
+        sql: `
+          INSERT INTO tickets 
+          (event_id, ticket_type, quantity, price) 
+          VALUES (?, ?, ?, ?)
+        `,
+        params: null
+      };
+
+      const [eventResult] = await transaction([eventQuery]);
+      const eventId = eventResult.insertId;
+
+      ticketQuery.params = [
+        eventId, 
+        ticket_type, 
+        total_tickets, 
+        ticket_price
+      ];
+      const [ticketResult] = await transaction([ticketQuery]);
+
+      res.status(201).json({
+        message: 'Event created successfully',
+        eventId: eventId,
+        ticketId: ticketResult.insertId,
+        images: imagePaths
+      });
     });
   } catch (error) {
     console.error('Event creation error:', error);
@@ -501,7 +527,6 @@ exports.createEvent = async (req, res) => {
     });
   }
 };
-
 
 exports.updateEvent = async (req, res) => {
   try {
