@@ -2,7 +2,7 @@
 const mysql = require("mysql2/promise"); // Use the promise-based version
 
 // Create a MySQL connection pool
-const pool = mysql.createPool({
+exports.pool = mysql.createPool({
   host: "localhost", // Your MySQL host, usually localhost
   user: "root", // Your MySQL username
   password: "", // Your MySQL password
@@ -12,18 +12,37 @@ const pool = mysql.createPool({
   queueLimit: 0, // Maximum number of connection requests (0 = unlimited)
 });
 
-// Test the connection to the database
-const testConnection = async () => {
+// Centralized database query method
+exports.query = async (sql, params = []) => {
   try {
-    const connection = await pool.getConnection(); // Get a connection from the pool
-    console.log("Connected to the MySQL database as id " + connection.threadId);
-    await connection.release(); // Release the connection back to the pool
-  } catch (err) {
-    console.error("Error connecting to the database:", err.stack);
+    const [results] = await exports.pool.execute(sql, params); // Using exports.pool directly
+    return results;
+  } catch (error) {
+    console.error('Database Query Error:', error);
+    throw error;
   }
 };
 
-// Test the connection
-testConnection();
-
-module.exports = pool; // Export the pool for use in other files
+// Helper function for transactions
+exports.transaction = async (queries) => {
+  const connection = await exports.pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    const results = [];
+    for (const { sql, params } of queries) {
+      const [result] = await connection.execute(sql, params);
+      results.push(result);
+    }
+    
+    await connection.commit();
+    return results;
+  } catch (error) {
+    await connection.rollback();
+    console.error('Transaction Error:', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+};

@@ -5,11 +5,11 @@ const Redis = require("ioredis");
 const db = require("./config/config");
 require("dotenv").config();
 
-// // Import routes
+// // const routes
 // const eventRoutes = require("./routes/eventRoutes");
 // const userRoutes = require("./routes/userRoutes");
 // const bookingRoutes = require("./routes/bookingRoutes");
-const authRoutes = require("./routes/authRoutes");
+// const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 
 const app = express();
@@ -170,8 +170,13 @@ app.get("/api/popular-events", cacheMiddleware(300), async (req, res) => {
 });
 
 // Routes
-app.use("/api/auth", authRoutes);
+// app.use("/api/auth", authRoutes);
 app.use("/api/event", eventRoutes);
+app.use('/api/tenant',require('./routes/tenantRoute'));
+app.use('/api/booking',require('./routes/bookingRoutes'));
+app.use('/api/user',require('./routes/userRoute'));
+app.use('/api/payment',require('./routes/paymentRoute'));
+app.use('/api/admin',require('./routes/adminRoute'))
 
 app.get("/api/test", (req, res) => {
   res.send("Test route is working");

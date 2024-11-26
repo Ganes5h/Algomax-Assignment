@@ -2,9 +2,6 @@
 SET sql_mode = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION';
 SET NAMES utf8mb4;
 
--- Create database
-CREATE DATABASE IF NOT EXISTS event_management;
-USE event_management;
 
 -- Platform Administrators table (Super Admins)
 CREATE TABLE platform_admins (
