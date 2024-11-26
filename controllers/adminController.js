@@ -1,4 +1,65 @@
 const { query, transaction } = require('../config/config');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+
+// Register an Admin
+exports.registerAdmin = async (req, res) => {
+    try {
+        const { name, email, password, role } = req.body;
+
+        // Check if admin already exists
+        const [existingAdmin] = await query(`SELECT * FROM admins WHERE email = ?`, [email]);
+        if (existingAdmin) {
+            return res.status(400).json({ message: 'Admin with this email already exists' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insert new admin into the database
+        const result = await query(
+            `INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, ?)`,
+            [name, email, hashedPassword, role || 'admin']
+        );
+
+        res.status(201).json({ message: 'Admin registered successfully', adminId: result.insertId });
+    } catch (error) {
+        console.error('Admin Registration Error:', error);
+        res.status(500).json({ message: 'Error registering admin', error: error.message });
+    }
+};
+
+// Admin Login
+exports.loginAdmin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Check if admin exists
+        const [admin] = await query(`SELECT * FROM admins WHERE email = ?`, [email]);
+        if (!admin) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        // Compare passwords
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // Generate JWT
+        const token = jwt.sign(
+            { id: admin.id, role: admin.role },
+            process.env.JWT_SECRET || 'secretkey',
+            { expiresIn: '1d' }
+        );
+
+        res.status(200).json({ message: 'Login successful', token });
+    } catch (error) {
+        console.error('Admin Login Error:', error);
+        res.status(500).json({ message: 'Error logging in admin', error: error.message });
+    }
+};
 
 // Admin verify KYC Documents
 exports.verifyKYCDocument = async (req, res) => {

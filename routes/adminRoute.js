@@ -5,6 +5,12 @@ const adminController = require('../controllers/adminController'); // Adjust the
 // Middleware to verify admin authentication (if applicable)
 // Example middleware: router.use(adminAuthMiddleware);
 
+router.post('/register', adminController.registerAdmin); 
+
+
+router.post('/login', adminController.loginAdmin);       
+
+
 // Admin verify KYC Documents
 router.put('/verify-kyc/:id', adminController.verifyKYCDocument);
 

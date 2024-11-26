@@ -371,6 +371,7 @@
 
 const { query, transaction } = require('../config/config');
 
+
 // Input validation helper
 const validateEventInput = (input) => {
   const errors = [];
