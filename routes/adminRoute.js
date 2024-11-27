@@ -22,4 +22,6 @@ router.put('/verify-tenant/:id', adminController.verifyTenantByAdmin);
 // Get Tenants Pending Verification
 router.get('/pending-verifications', adminController.getPendingVerifications);
 
+router.get('/documents/:tenantId', adminController.getDocumentPathsByTenantId);
+
 module.exports = router;
