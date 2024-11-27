@@ -10,7 +10,6 @@ router.post('/register', adminController.registerAdmin);
 
 router.post('/login', adminController.loginAdmin);       
 
-
 // Admin verify KYC Documents
 router.put('/verify-kyc/:id', adminController.verifyKYCDocument);
 

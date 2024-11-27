@@ -27,55 +27,52 @@
 
 // module.exports = router;
 
-
-
-const express = require('express');
+const express = require("express");
 const {
   createEvent,
   updateEvent,
   getEvents,
   getEventDetails,
-  deleteEvent
-} = require('../controllers/eventController');
-const {
-  authenticate,
-  authorize
-} = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/upload')
+  deleteEvent,
+} = require("../controllers/eventController");
+const { authenticate, authorize } = require("../middlewares/authMiddleware");
+const upload = require("../middlewares/upload");
 
 const router = express.Router();
 
 // Create event (only for organizers and admins)
-router.post('/:id',upload.array('images', 5),
-  // authenticate, 
-  // authorize(['organizer', 'admin']), 
+router.post(
+  "/:id",
+  upload.array("images", 5),
+  // authenticate,
+  // authorize(['organizer', 'admin']),
   createEvent
 );
 
 // Update event (only for organizers and admins of the tenant)
-router.put('/:eventId', 
-  authenticate, 
-  authorize(['organizer', 'admin']), 
+router.put(
+  "/:eventId",
+  authenticate,
+  authorize(["organizer", "admin"]),
   updateEvent
 );
 
 // Get all events (filtered)
-router.get('/', 
-  authenticate, 
+router.get(
+  "/",
+  // authenticate,
   getEvents
 );
 
 // Get specific event details
-router.get('/:eventId', 
-  authenticate, 
-  getEventDetails
-);
+router.get("/:eventId", authenticate, getEventDetails);
 
 // Delete event
-router.delete('/:eventId', 
-  authenticate, 
-  authorize(['organizer', 'admin']), 
+router.delete(
+  "/:eventId",
+  authenticate,
+  authorize(["organizer", "admin"]),
   deleteEvent
 );
 
- module.exports=  router;
+module.exports = router;
