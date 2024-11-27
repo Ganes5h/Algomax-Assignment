@@ -46,7 +46,9 @@ const upload = require('../middlewares/upload')
 const router = express.Router();
 
 // Create event (only for organizers and admins)
-router.post('/:id',upload.array('images', 5),
+router.post(
+  '/:id',
+  upload.array('images', 5), // Handles up to 5 files with the field name "images"
   // authenticate, 
   // authorize(['organizer', 'admin']), 
   createEvent
@@ -54,27 +56,27 @@ router.post('/:id',upload.array('images', 5),
 
 // Update event (only for organizers and admins of the tenant)
 router.put('/:eventId', 
-  authenticate, 
-  authorize(['organizer', 'admin']), 
+  // authenticate, 
+  // authorize(['organizer', 'admin']), 
   updateEvent
 );
 
 // Get all events (filtered)
 router.get('/', 
-  authenticate, 
+  // authenticate, 
   getEvents
 );
 
 // Get specific event details
 router.get('/:eventId', 
-  authenticate, 
+  // authenticate, 
   getEventDetails
 );
 
 // Delete event
 router.delete('/:eventId', 
-  authenticate, 
-  authorize(['organizer', 'admin']), 
+  // authenticate, 
+  // authorize(['organizer', 'admin']), 
   deleteEvent
 );
 

@@ -2,7 +2,8 @@ const { query, transaction } = require("../config/config");
 const path = require("path");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const uploadLogo = require("../middlewares/logoConfig");
+const uploadKYC = require("../middlewares/kycMulterConfig");
 const multer = require("multer");
 const fs = require("fs");
 
@@ -12,47 +13,32 @@ const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-//Multer configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = "uploads/logos";
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const fileExtension = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${fileExtension}`);
-  },
-});
+// //Multer configuration
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const uploadDir = "uploads/logos";
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir, { recursive: true });
+//     }
+//     cb(null, uploadDir);
+//   },
+//   filename: (req, file, cb) => {
+//     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+//     const fileExtension = path.extname(file.originalname);
+//     cb(null, `${file.fieldname}-${uniqueSuffix}${fileExtension}`);
+//   },
+// });
 
-const upload = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Only image files are allowed"), false);
-    }
-    cb(null, true);
-  },
-});
+// const upload = multer({
+//   storage,
+//   fileFilter: (req, file, cb) => {
+//     if (!file.mimetype.startsWith("image/")) {
+//       return cb(new Error("Only image files are allowed"), false);
+//     }
+//     cb(null, true);
+//   },
+// });
 
-// Helper function for file upload
-const uploadDocument = async (file, tenantId, documentType) => {
-  if (!file) return null; // If no file, return null (optional file handling)
-
-  const uploadDir = path.join(__dirname, "../uploads/kyc");
-  const fileName = `${tenantId}_${documentType}_${Date.now()}${path.extname(
-    file.originalname
-  )}`;
-  const filePath = path.join(uploadDir, fileName);
-
-  // Save file
-  await file.mv(filePath);
-
-  return `/uploads/kyc/${fileName}`; // Return the file path
-};
 
 // Input validation helper
 const validateTenantInput = (input) => {
@@ -78,7 +64,7 @@ const validateTenantInput = (input) => {
 
 // createTenant function
 exports.createTenant = [
-  upload.single("brand_logo"), // Multer middleware for file upload
+  uploadLogo.single("brand_logo"), // Multer middleware for file upload
   async (req, res) => {
     try {
       const {
@@ -420,34 +406,12 @@ exports.updateTenantDetails = async (req, res) => {
 //   }
 // };
 
-// Configure Multer storage
-const storageS = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/kyc_documents/"); // Specify folder to save files
-  },
-  filename: (req, file, cb) => {
-    // Use original filename and add a timestamp to avoid name conflicts
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
-// Multer file filter to ensure only image files (JPG, JPEG, PNG) are uploaded
-const fileFilterS = (req, file, cb) => {
-  const allowedFileTypes = ["image/jpeg", "image/png", "image/jpg"];
-  if (allowedFileTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only JPG, JPEG, and PNG files are allowed"), false);
-  }
-};
-
-// Initialize multer
-const uploadS = multer({ storageS, fileFilterS });
 
 // Ensure upload is done before proceeding
+// Upload KYC Documents
 exports.uploadKYCDocuments = [
-  // Multer middleware for file upload (front document)
-  uploadS.single("frontDocument"), // 'frontDocument' is the key in the form-data
+  // Multer middleware for file upload (allowing up to 5 files)
+  uploadKYC.array("documents", 5), // 'documents' is the key in the form-data
 
   async (req, res) => {
     try {
@@ -461,20 +425,24 @@ exports.uploadKYCDocuments = [
           .json({ message: "Document type and number are required" });
       }
 
-      // Check if a file is uploaded
-      const frontDocument = req.file;
-      if (!frontDocument) {
-        return res.status(400).json({ message: "Front document is required" });
+      // Check if files are uploaded
+      const files = req.files;
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "At least one document is required" });
       }
 
-      // Save the document info to the database
-      const frontUrl = `/uploads/kyc_documents/${frontDocument.filename}`;
+      // Save the document info to the database for each file
+      const documentUrls = [];
+      for (const file of files) {
+        const documentUrl = `/uploads/kyc_documents/${file.filename}`;
+        documentUrls.push(documentUrl);
 
-      const [result] = await query(
-        `INSERT INTO kyc_documents (tenant_id, document_type, document_front_url, document_number)
-         VALUES (?, ?, ?, ?)`,
-        [tenantId, documentType, frontUrl, documentNumber]
-      );
+        await query(
+          `INSERT INTO kyc_documents (tenant_id, document_type, document_front_url, document_number)
+           VALUES (?, ?, ?, ?)`,
+          [tenantId, documentType, documentUrl, documentNumber]
+        );
+      }
 
       // Update tenant KYC status (set to pending for verification)
       await query(`UPDATE tenants SET kyc_status = 'pending' WHERE id = ?`, [
@@ -483,19 +451,19 @@ exports.uploadKYCDocuments = [
 
       // Send success response
       res.status(201).json({
-        message: "KYC document uploaded successfully",
-        documentId: result.insertId,
-        documentUrl: frontUrl,
+        message: "KYC documents uploaded successfully",
+        documentUrls,
       });
     } catch (error) {
-      console.error("Error uploading KYC document:", error.message);
+      console.error("Error uploading KYC documents:", error.message);
       res.status(500).json({
-        message: "Failed to upload KYC document",
+        message: "Failed to upload KYC documents",
         error: error.message,
       });
     }
   },
 ];
+
 // Upload Bank Details
 exports.uploadBankDetails = async (req, res) => {
   try {
@@ -513,6 +481,7 @@ exports.uploadBankDetails = async (req, res) => {
             (tenant_id, bank_name, account_holder_name, 
              account_number, ifsc_code) 
             VALUES (?, ?, ?, ?, ?)`,
+
       [tenantId, bank_name, account_holder_name, account_number, ifsc_code]
     );
 
