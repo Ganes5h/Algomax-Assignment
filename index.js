@@ -44,11 +44,12 @@ global.redisClient = redisClient;
 
 // Middleware Configuration
 app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  // cors({
+  //   origin: process.env.CORS_ORIGIN || "*",
+  //   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  //   allowedHeaders: ["Content-Type", "Authorization"],
+  // })
+  cors()
 );
 
 app.use(bodyParser.json({ limit: "10mb" }));
@@ -61,12 +62,11 @@ app.get("/health", async (req, res) => {
     await redisClient.ping();
 
     // Check Database connection
-    await new Promise((resolve, reject) => {
-      db.query("SELECT 1", (err) => {
-        if (err) reject(err);
-        resolve();
-      });
-    });
+    const dbConnected = await db.testConnection();
+
+    if (!dbConnected) {
+      throw new Error("Database connection failed");
+    }
 
     res.status(200).json({
       status: "healthy",
@@ -172,11 +172,11 @@ app.get("/api/popular-events", cacheMiddleware(300), async (req, res) => {
 // Routes
 // app.use("/api/auth", authRoutes);
 app.use("/api/event", eventRoutes);
-app.use('/api/tenant',require('./routes/tenantRoute'));
-app.use('/api/booking',require('./routes/bookingRoutes'));
-app.use('/api/user',require('./routes/userRoute'));
-app.use('/api/payment',require('./routes/paymentRoute'));
-app.use('/api/admin',require('./routes/adminRoute'))
+app.use("/api/tenant", require("./routes/tenantRoute"));
+app.use("/api/booking", require("./routes/bookingRoutes"));
+app.use("/api/user", require("./routes/userRoute"));
+app.use("/api/payment", require("./routes/paymentRoute"));
+app.use("/api/admin", require("./routes/adminRoute"));
 
 app.get("/api/test", (req, res) => {
   res.send("Test route is working");

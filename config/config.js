@@ -1,48 +1,80 @@
 // config/config.js
-const mysql = require("mysql2/promise"); // Use the promise-based version
+const mysql = require("mysql2");
 
-// Create a MySQL connection pool
-exports.pool = mysql.createPool({
-  host: "localhost", // Your MySQL host, usually localhost
-  user: "root", // Your MySQL username
-  password: "", // Your MySQL password
-  database: "algomax", // Your database name
-  waitForConnections: true, // Wait for connections to be available
-  connectionLimit: 10, // Maximum number of connections in the pool
-  queueLimit: 0, // Maximum number of connection requests (0 = unlimited)
+// Create a MySQL connection pool with improved configuration
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || "localhost", // Use environment variable or default
+  user: process.env.DB_USER || "root", // Use environment variable or default
+  password: process.env.DB_PASSWORD || "", // Use environment variable or default
+  database: process.env.DB_NAME || "algomax", // Use environment variable or default
+
+  // Connection pool options
+  connectionLimit: 10, // Reasonable default, adjust based on your needs
+  waitForConnections: true,
+  queueLimit: 0,
+
+  // Additional connection options
+  connectTimeout: 10000, // 10 seconds
+  acquireTimeout: 10000, // 10 seconds
+
+  // Error handling
+  debug: false, // Set to true for development debugging
 });
 
+// Promisify the pool
+const promisePool = pool.promise();
+
 // Centralized database query method
-exports.query = async (sql, params = []) => {
+const query = async (sql, params = []) => {
   try {
-    const [results] = await exports.pool.execute(sql, params); // Using exports.pool directly
+    const [results] = await promisePool.execute(sql, params);
     return results;
   } catch (error) {
-    console.error('Database Query Error:', error);
+    console.error("Database Query Error:", error);
     throw error;
   }
 };
 
-// Helper function for transactions
-exports.transaction = async (queries) => {
-  const connection = await exports.pool.getConnection();
-  
+// Transaction method
+const transaction = async (queries) => {
+  const connection = await promisePool.getConnection();
+
   try {
     await connection.beginTransaction();
-    
+
     const results = [];
     for (const { sql, params } of queries) {
       const [result] = await connection.execute(sql, params);
       results.push(result);
     }
-    
+
     await connection.commit();
     return results;
   } catch (error) {
     await connection.rollback();
-    console.error('Transaction Error:', error);
+    console.error("Transaction Error:", error);
     throw error;
   } finally {
     connection.release();
   }
+};
+
+// Test connection method (useful for debugging)
+const testConnection = async () => {
+  try {
+    const connection = await promisePool.getConnection();
+    console.log("Database connection successful");
+    connection.release();
+    return true;
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    return false;
+  }
+};
+
+module.exports = {
+  pool: promisePool,
+  query,
+  transaction,
+  testConnection,
 };
