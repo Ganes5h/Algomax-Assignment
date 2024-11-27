@@ -518,6 +518,94 @@ exports.createEvent = async (req, res) => {
   }
 };
 
+exports.fetchAllEvents = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, q, category, location, start_date, end_date, status, online_event } = req.query;
+
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
+
+    // Base query
+    let query = `
+      SELECT * FROM events
+      WHERE 1 = 1
+    `;
+    const params = [];
+
+    // Apply filters and search
+    if (q) {
+      query += ` AND (title LIKE ? OR description LIKE ?)`;
+      params.push(`%${q}%`, `%${q}%`);
+    }
+
+    if (category) {
+      query += ` AND category = ?`;
+      params.push(category);
+    }
+
+    if (location) {
+      query += ` AND location = ?`;
+      params.push(location);
+    }
+
+    if (start_date) {
+      query += ` AND start_datetime >= ?`;
+      params.push(start_date);
+    }
+
+    if (end_date) {
+      query += ` AND end_datetime <= ?`;
+      params.push(end_date);
+    }
+
+    if (status) {
+      query += ` AND status = ?`;
+      params.push(status);
+    }
+
+    if (online_event !== undefined) {
+      query += ` AND online_event = ?`;
+      params.push(online_event === 'true' ? 1 : 0);
+    }
+
+    // Add pagination
+    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    params.push(parseInt(limit), offset);
+
+    // Fetch events
+    const events = await queryDatabase(query, params);
+
+    // Fetch total count for pagination
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM events
+      WHERE 1 = 1
+    `;
+    const totalParams = params.slice(0, -2); // Exclude LIMIT and OFFSET
+    const [countResult] = await queryDatabase(countQuery, totalParams);
+    const totalEvents = countResult.total;
+
+    // Send response
+    res.status(200).json({
+      message: 'Events fetched successfully',
+      data: events,
+      pagination: {
+        total: totalEvents,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalEvents / limit),
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({
+      message: 'Failed to fetch events',
+      error: error.message,
+    });
+  }
+};
+
+
 
 exports.updateEvent = async (req, res) => {
   try {

@@ -239,3 +239,46 @@ exports.getPendingVerifications = async (req, res) => {
         });
     }
 };
+
+// Get Document Paths for a Tenant
+exports.getDocumentPathsByTenantId = async (req, res) => {
+    const { tenantId } = req.params; // Extract tenantId from request parameters
+
+    try {
+        // Validate tenantId
+        if (!tenantId) {
+            return res.status(400).json({ message: 'Tenant ID is required' });
+        }
+
+        // Query the database for document paths
+        const documentPaths = await query(`
+            SELECT 
+                kd.document_type,
+                kd.document_front_url,
+                kd.document_back_url,
+                bd.bank_name,
+                bd.uploaded_at
+            FROM tenants t
+            LEFT JOIN kyc_documents kd ON t.id = kd.tenant_id
+            LEFT JOIN bank_details bd ON t.id = bd.tenant_id
+            WHERE t.id = ?
+        `, [tenantId]);
+
+        // Check if any documents exist for the tenant
+        if (documentPaths.length === 0) {
+            return res.status(404).json({ message: 'No documents found for the specified tenant' });
+        }
+
+        // Respond with the document paths
+        res.status(200).json({
+            tenantId,
+            documents: documentPaths,
+        });
+    } catch (error) {
+        console.error('Get Document Paths Error:', error);
+        res.status(500).json({ 
+            message: 'Error fetching document paths', 
+            error: error.message 
+        });
+    }
+};

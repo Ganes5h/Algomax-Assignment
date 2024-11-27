@@ -35,7 +35,8 @@ const {
   updateEvent,
   getEvents,
   getEventDetails,
-  deleteEvent
+  deleteEvent,
+  fetchAllEvents
 } = require('../controllers/eventController');
 const {
   authenticate,
@@ -53,6 +54,8 @@ router.post(
   // authorize(['organizer', 'admin']), 
   createEvent
 );
+
+router.get('/fetch-events',fetchAllEvents)
 
 // Update event (only for organizers and admins of the tenant)
 router.put('/:eventId', 
