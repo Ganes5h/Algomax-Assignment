@@ -41,11 +41,12 @@ const {
   authenticate,
   authorize
 } = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload')
 
 const router = express.Router();
 
 // Create event (only for organizers and admins)
-router.post('/:id', 
+router.post('/:id',upload.array('images', 5),
   // authenticate, 
   // authorize(['organizer', 'admin']), 
   createEvent
