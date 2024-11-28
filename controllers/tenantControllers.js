@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const { Tenant, TenantKYC } = require("../models/UserModel"); // Assuming your models are exported here
 const { SuperAdmin } = require("../models/UserModel");
 const fs = require("fs");
+const jwt = require("jsonwebtoken");
 
 // Set up multer storage configuration
 // const storage = multer.diskStorage({
@@ -54,7 +55,47 @@ const createTenant = async (req, res) => {
   }
 };
 
-// Set up multer storage configuration
+// Login Tenant API
+const loginTenant = async (req, res) => {
+  const { email, password } = req.body;
+  console.log(req.body);
+
+  try {
+    // Check if the tenant exists
+    const tenant = await Tenant.findOne({ email });
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found." });
+    }
+
+    // Check if the tenant's KYC is verified
+    const tenantKYC = await TenantKYC.findOne({ tenant: tenant._id });
+    if (!tenantKYC || tenantKYC.verificationStatus !== "verified") {
+      return res.status(403).json({ message: "Tenant is not verified." });
+    }
+
+    // Compare the password with the stored hashed password
+    const isPasswordValid = await tenant.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    // Create JWT Token
+    const token = jwt.sign(
+      { tenantId: tenant._id, email: tenant.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      tenant,
+    });
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).json({ message: "Server error.", error: error.message });
+  }
+};
 
 // Set up multer storage configuration
 const storage = multer.diskStorage({
@@ -413,6 +454,7 @@ const sendVerificationEmail = async (tenantIds, verificationStatus) => {
 
 module.exports = {
   createTenant,
+  loginTenant,
   // uploadKYC,
   uploadSingleDocument,
   updateTenantKYC,

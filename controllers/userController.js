@@ -182,8 +182,27 @@ const loginUser = async (req, res) => {
   }
 };
 
+const getUsersIdsAndEmails = async (req, res) => {
+  try {
+    // Fetch users with only `_id` and `email` fields
+    const users = await User.find({}, "_id email");
+
+    // Respond with the list of users
+    res.status(200).json({
+      message: "Users fetched successfully",
+      users,
+    });
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({
+      message: "Error fetching users",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   registerUser,
   verifyOTP,
   loginUser,
+  getUsersIdsAndEmails,
 };

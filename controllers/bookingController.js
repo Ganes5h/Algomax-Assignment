@@ -290,3 +290,64 @@ exports.getBooking = async (req, res) => {
     });
   }
 };
+
+// Controller to create a payment intent
+exports.createPaymentIntent = async (req, res) => {
+  const { bookingId } = req.body;
+
+  if (!bookingId) {
+    return res.status(400).json({ error: "Booking ID is required" });
+  }
+
+  try {
+    // Fetch the booking details
+    const booking = await Booking.findById(bookingId).populate("event");
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Get event details
+    const event = booking.event;
+
+    // Ensure that there are available tickets for the event
+    const ticketDetails = booking.ticketDetails;
+    let availableTickets = true;
+
+    // Check if the quantity of the ticket type exceeds the available tickets
+    for (const ticket of ticketDetails) {
+      const eventTicket = event.ticketDetails.find(
+        (eventTicket) => eventTicket.type === ticket.type
+      );
+      if (eventTicket && eventTicket.availableQuantity < ticket.quantity) {
+        availableTickets = false;
+        break;
+      }
+    }
+
+    if (!availableTickets) {
+      return res.status(400).json({ error: "Not enough available tickets" });
+    }
+
+    // Calculate the total amount (assuming the total price is already set in the booking)
+    const totalPrice = booking.totalPrice;
+
+    // Create Stripe payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalPrice * 100, // Convert to smallest currency unit (cents)
+      currency: event.currency || "USD", // Default to USD if not provided by event
+      metadata: {
+        bookingId: booking._id,
+        userId: booking.user,
+      },
+    });
+
+    // Respond with the client secret to be used in the frontend
+    res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    console.error("Error creating payment intent:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

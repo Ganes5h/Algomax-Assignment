@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   createTenant,
+  loginTenant,
   uploadSingleDocument,
   updateTenantKYC,
   getTenantKYC,
@@ -25,5 +26,7 @@ router.get("/getTenantKYC/:tenantId", getTenantKYC);
 router.post("/verifyTenantKYC/:tenantKYCId", verifyTenantKYC);
 
 router.get("/getpendingkyc", getPendingKYC);
+
+router.post("/login", loginTenant);
 
 module.exports = router;

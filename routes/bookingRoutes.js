@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   createBooking,
+  createPaymentIntent,
   confirmBookingPayment,
   cancelBooking,
   getUserBookings,
@@ -23,5 +24,7 @@ router.get("/", getUserBookings);
 
 // Get a single booking by ID
 router.get("/:id", getBooking);
+
+router.post("/create-payment-intent", createPaymentIntent);
 
 module.exports = router;
