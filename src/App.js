@@ -33,7 +33,11 @@ function App() {
           <Route path="/superadmin-login" element={<SuperAdminLogin />} />
           {/* <Route path="/admin-login" element={<AdminLogin />} /> */}
           <Route exact path="/dashboard-layout/" element={<AdminDashboard />}>
-            <Route path="analytics" element={<SuperAdminAnalytics />} />
+            <Route index path="analytics" element={<SuperAdminAnalytics />} />
+            <Route
+              path="tenant-verification"
+              element={<TenantKYCVerification />}
+            />
           </Route>
           {/* Protect the /register-tenant route with RequireAuth */}
           {/* 

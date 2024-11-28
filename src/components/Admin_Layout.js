@@ -77,7 +77,7 @@ export default function Dashboard() {
     // },
 
     {
-      path: "mark-attendance",
+      path: "tenant-verification",
       label: "Verify KYC's",
       icon: GroupIcon,
     },
