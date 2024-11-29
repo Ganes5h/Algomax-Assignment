@@ -63,6 +63,7 @@ const tanantRoutes = require("./routes/tanantRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const fs = require("fs");
 
 // Serve static files from the 'uploads' directory
 // Load environment variables from .env file
@@ -95,6 +96,17 @@ app.use("/api/tanant", tanantRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/notifications", notificationRoutes);
+
+// New endpoint to serve JSON file content
+app.get("/api/algomaxcollection", (req, res) => {
+  fs.readFile("./AlgoMax.postman_collection.json", "utf8", (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Unable to read JSON file");
+    }
+    res.json(JSON.parse(data));
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

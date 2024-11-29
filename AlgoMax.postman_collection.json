@@ -1,0 +1,602 @@
+{
+	"info": {
+		"_postman_id": "95b4c5d7-55ed-476e-8d5e-c0ed74c2c6a5",
+		"name": "AlgoMax",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31760674",
+		"_collection_link": "https://speeding-space-850794.postman.co/workspace/New-Team-Workspace~2eb4d197-ca1b-4263-897f-491eccd45ba0/collection/31760674-95b4c5d7-55ed-476e-8d5e-c0ed74c2c6a5?action=share&source=collection_link&creator=31760674"
+	},
+	"item": [
+		{
+			"name": "Super Admin",
+			"item": [
+				{
+					"name": "Super admin Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Avi\",\r\n  \"email\": \"govtschoolno.34website@gmail.com\",\r\n  \"password\": \"123ok\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/superadmin/register",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"superadmin",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Super admin Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"govtschoolno.34website@gmail.com\",\r\n  \"password\": \"123ok\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/superadmin/login",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"superadmin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getpendingkyc",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:4000/api/tanant/getpendingkyc",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"tanant",
+								"getpendingkyc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "analytics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:4000/api/superadmin/analytics",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"superadmin",
+								"analytics"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Normal User",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"Ganesh Kugaji\",\r\n  \"email\": \"govtschoolno.34website@gmail.com\",\r\n  \"password\": \"123ok\"\r\n \r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/normaluser/register",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"normaluser",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n     \"email\":\"govtschoolno.34website@gmail.com\", \"otp\":\"973305\" \r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/normaluser/verify-otp",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"normaluser",
+								"verify-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login ",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"email\":\"govtschoolno.34website@gmail.com\", \"password\": \"123ok\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/normaluser/login",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"normaluser",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ids-emails",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:4000/api/normaluser/users/ids-emails",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"normaluser",
+								"users",
+								"ids-emails"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tanant",
+			"item": [
+				{
+					"name": "createTenant",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Tenant Name\",\r\n  \"email\": \"tenant@example.com\",\r\n  \"password\": \"securepassword\",\r\n  \"adminUser\": \"6747ec92b8e4a06e12d44899\",\r\n  \"phoneNumber\": \"1234567890\",\r\n  \"branding\": \"tenantBranding\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/tanant/createTenant",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"tanant",
+								"createTenant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "uploadKYC",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "tenantId",
+									"value": "674804c57f57cd090ef96b6b",
+									"type": "text"
+								},
+								{
+									"key": "companyName",
+									"value": "GAnesh",
+									"type": "text"
+								},
+								{
+									"key": "registrationNumber",
+									"value": "12345",
+									"type": "text"
+								},
+								{
+									"key": "taxId",
+									"value": "5896",
+									"type": "text"
+								},
+								{
+									"key": "documentType",
+									"value": "Business License",
+									"type": "text"
+								},
+								{
+									"key": "document",
+									"type": "file",
+									"src": "qF-AvCf5_/WhatsApp_Image_2024-11-17_at_20.33.25_1714feaf-removebg-preview.png"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:4000/api/tanant/uploadKYC",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"tanant",
+								"uploadKYC"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verifyTenantKYC",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"superAdminId\": \"67475c11c50851edbad3ae0e\",\r\n  \"verificationStatus\": \"verified\",\r\n  \"verificationNotes\": \"Documents verified successfully.\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/tanant/verifyTenantKYC/67480a727e7323faca543de0",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"tanant",
+								"verifyTenantKYC",
+								"67480a727e7323faca543de0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Tenant login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"gneshkugaji@gmail.com\",\r\n    \"password\":\"123ok\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/tanant/login",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"tanant",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Event",
+			"item": [
+				{
+					"name": "createEvent",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "poster",
+									"type": "file",
+									"src": "opZ3UYgkR/WhatsApp_Image_2024-11-26_at_19.56.06_6b87cb18-removebg-preview.png"
+								},
+								{
+									"key": "title",
+									"value": "Sample Event",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "This is a sample event description",
+									"type": "text"
+								},
+								{
+									"key": "managedBy",
+									"value": "674804c57f57cd090ef96b6b",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "{ \"venue\": \"Conference Hall\", \"city\": \"London\", \"country\": \"UK\" }",
+									"type": "text"
+								},
+								{
+									"key": "date",
+									"value": "2024-12-31T18:00:00.000Z",
+									"type": "text"
+								},
+								{
+									"key": "time",
+									"value": "18:00",
+									"type": "text"
+								},
+								{
+									"key": "category",
+									"value": "Workshop",
+									"type": "text"
+								},
+								{
+									"key": "ticketDetails",
+									"value": "{ \"totalTickets\": 500, \"availableTickets\": 300, \"currency\": \"USD\", \"pricing\": [ { \"type\": \"Standard\", \"price\": 100, \"quantity\": 300, \"availableQuantity\": 200 }, { \"type\": \"VIP\", \"price\": 500, \"quantity\": 100, \"availableQuantity\": 50 } ] }",
+									"type": "text"
+								},
+								{
+									"key": "bankDetails",
+									"value": "{ \"bankName\": \"Bank of America\", \"accountHolderName\": \"John Doe\", \"accountNumber\": \"1234567890\", \"routingNumber\": \"987654321\" ,\"country\":\"US\"}",
+									"type": "text"
+								},
+								{
+									"key": "privateEvent",
+									"value": "false",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "draft",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:4000/api/events/create",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"events",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "addAdmin",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"tenantId\": \"674804c57f57cd090ef96b6b\",\r\n  \"eventId\": \"67482bad6110f3b9004924c4\",\r\n  \"name\": \"John Doe\",\r\n  \"email\": \"gneshkugaji@gmail.com\",\r\n  \"password\": \"123ok\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/events/addAdmin",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"events",
+								"addAdmin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "bookings Event",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"userId\":\"6747ec92b8e4a06e12d44899\",\r\n  \"eventId\": \"67482bad6110f3b9004924c4\",\r\n  \"ticketDetails\": [\r\n    {\r\n      \"type\": \"Standard\",\r\n      \"quantity\": 2\r\n    },\r\n    {\r\n      \"type\": \"VIP\",\r\n      \"quantity\": 1\r\n    }\r\n  ],\r\n  \"totalPrice\": 700\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/bookings/",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"bookings",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "COnfirm Booking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"paymentIntentId\":\"pi_3QQ3nE2eZvKYlo2C1WXrptnf\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:4000/api/bookings/6748344b978c85d7bd687176/confirm",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"bookings",
+								"6748344b978c85d7bd687176",
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Booking",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "localhost:4000/api/bookings/6748344b978c85d7bd687176/cancel",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"bookings",
+								"6748344b978c85d7bd687176",
+								"cancel"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getallevents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:4000/api/events/getallevents",
+							"host": [
+								"localhost"
+							],
+							"port": "4000",
+							"path": [
+								"api",
+								"events",
+								"getallevents"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
