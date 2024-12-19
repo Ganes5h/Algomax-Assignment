@@ -4,11 +4,13 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useDispatch } from "react-redux";
 import { setSuperAdminData } from "../../redux/superAdminSlice"; // Assume the Redux slice is created
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // Correctly invoke the hook to get the navigate function
 
   const handleLogin = async () => {
     try {
@@ -33,12 +35,16 @@ const Login = () => {
           })
         );
 
-        // Show success message
+        // Show success message and navigate after confirmation
         Swal.fire({
           title: "Success!",
           text: "Login successful.",
           icon: "success",
           confirmButtonText: "Proceed",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate("/dashboard-layout/analytics");
+          }
         });
       }
     } catch (error) {
@@ -52,13 +58,23 @@ const Login = () => {
   };
 
   return (
-    <Container maxWidth="xs">
+    <Container
+      maxWidth="xs"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          mt: 8,
+          minWidth: "500px",
+          p: 8,
+          boxShadow: "rgba(100, 100, 111, 0.2) 0px 7px 29px 0px",
         }}
       >
         <Typography variant="h4" gutterBottom>

@@ -328,7 +328,16 @@ const EventCreationStepper = () => {
   );
 
   return (
-    <Container maxWidth="md">
+    <Container
+      maxWidth="md"
+      style={{
+        minHeight: "130vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: "30px",
+      }}
+    >
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
         <Typography variant="h4" align="center" gutterBottom>
           Create New Event

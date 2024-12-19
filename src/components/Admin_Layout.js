@@ -81,6 +81,11 @@ export default function Dashboard() {
       label: "Verify KYC's",
       icon: GroupIcon,
     },
+    {
+      path: "all-tenant",
+      label: "All tenants",
+      icon: GroupIcon,
+    },
     // {
     //   path: "issue-certificate",
     //   label: "Issue Certificate",

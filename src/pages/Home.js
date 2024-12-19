@@ -15,6 +15,7 @@ import {
   ConfirmationNumber as TicketIcon,
   Analytics as AnalyticsIcon,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 const featureVariants = {
   hidden: { opacity: 0, y: 50 },
@@ -30,7 +31,7 @@ const featureVariants = {
 
 const HomePage = () => {
   const [hoveredFeature, setHoveredFeature] = useState(null);
-
+  const navigate = useNavigate();
   const features = [
     {
       icon: <EventNoteIcon sx={{ fontSize: 60, color: "primary.main" }} />,
@@ -51,7 +52,9 @@ const HomePage = () => {
         "Gain powerful insights into your event performance and attendee demographics.",
     },
   ];
-
+  const navigatetoEvents = () => {
+    navigate("/all-events");
+  };
   return (
     <Box
       sx={{
@@ -124,6 +127,7 @@ const HomePage = () => {
                 px: 4,
                 py: 1.5,
               }}
+              onClick={navigatetoEvents()}
             >
               Browse Events
             </Button>

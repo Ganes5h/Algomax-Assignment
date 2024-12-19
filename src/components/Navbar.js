@@ -210,7 +210,7 @@ const PlatformNavbar = () => {
                 <AccountCircle />
               </IconButton>
             ) : (
-              <Button color="inherit" onClick={() => navigate("/login")}>
+              <Button color="inherit" onClick={() => navigate("/public-login")}>
                 Login
               </Button>
             )}

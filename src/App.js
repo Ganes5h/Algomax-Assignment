@@ -2,7 +2,7 @@ import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import FooterSection from "./components/Footer";
-// import PlatformNavbar from "./components/Navbar";
+import PlatformNavbar from "./components/Navbar";
 import CardComponent from "./components/Card";
 // import CreateTanent from "./components/index";
 
@@ -21,6 +21,9 @@ import SuperAdminAnalytics from "./pages/Admin/Analytics";
 import TenantRegistrationStepper from "./pages/Tenant/TenentRegister";
 import TenantLogin from "./pages/Tenant/TenantLogin";
 import CreateEvent from "./pages/Tenant/CreateEvent";
+import TenantRegisterStepper from "./pages/Tenant/Register/TananetStepper";
+import AllTenantsForadmin from "./pages/Admin/AllTenants";
+import EventCreationForm from "./pages/CreateEvent";
 
 function App() {
   return (
@@ -28,17 +31,64 @@ function App() {
       <Router>
         {/* <PlatformNavbar /> */}
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route
+            path="/"
+            element={
+              <>
+                <PlatformNavbar />
+                <Home />
+              </>
+            }
+          />
           <Route path="/card" element={<CardComponent />} />
-          <Route path="/public-register" element={<Register />} />
-          <Route path="/public-login" element={<Login />} />
-          <Route path="/all-events" element={<GetAllEvents />} />
+          <Route
+            path="/public-register"
+            element={
+              <>
+                <PlatformNavbar />
+                <Register />
+              </>
+            }
+          />
+          <Route
+            path="/public-login"
+            element={
+              <>
+                <PlatformNavbar />
+                <Login />/
+              </>
+            }
+          />
+          <Route
+            path="/all-events"
+            element={
+              <>
+                <PlatformNavbar />
+                <GetAllEvents />
+              </>
+            }
+          />
           <Route path="/superadmin-login" element={<SuperAdminLogin />} />
+          <Route path="/tanant-reg" element={<TenantRegisterStepper />} />
+          <Route path="/create-e" element={<EventCreationForm />} />
           <Route
             path="/tanent-register"
-            element={<TenantRegistrationStepper />}
+            element={
+              <>
+                <PlatformNavbar />
+                <TenantRegistrationStepper />/
+              </>
+            }
           />
-          <Route path="/create-event" element={<CreateEvent />} />
+          <Route
+            path="/create-event"
+            element={
+              <>
+                <PlatformNavbar />
+                <CreateEvent />
+              </>
+            }
+          />
           <Route path="/tanent-login" element={<TenantLogin />} />
           {/* <Route path="/admin-login" element={<AdminLogin />} /> */}
           <Route exact path="/dashboard-layout/" element={<AdminDashboard />}>
@@ -47,6 +97,7 @@ function App() {
               path="tenant-verification"
               element={<TenantKYCVerification />}
             />
+            <Route path="all-tenant" element={<AllTenantsForadmin />} />
           </Route>
           {/* Protect the /register-tenant route with RequireAuth */}
           {/* 
