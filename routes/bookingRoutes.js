@@ -7,6 +7,7 @@ const {
   cancelBooking,
   getUserBookings,
   getBooking,
+  BookingController,
 } = require("../controllers/bookingController");
 // const { protect } = require("../middleware/auth"); // Assuming you have an auth middleware for user authentication
 
@@ -26,5 +27,9 @@ router.get("/", getUserBookings);
 router.get("/:id", getBooking);
 
 router.post("/create-payment-intent", createPaymentIntent);
+
+router.post("/bookings", BookingController.createBooking);
+router.post("/bookings/verify-payment", BookingController.verifyPayment);
+router.post("/bookings/verify-qr", BookingController.verifyQRCode);
 
 module.exports = router;

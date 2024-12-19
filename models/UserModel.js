@@ -51,11 +51,11 @@ const TenantKYCSchema = new mongoose.Schema(
       required: [true, "Registration number is required"],
       unique: true,
     },
-    taxId: {
-      type: String,
-      required: [true, "Tax ID is required"],
-      unique: true,
-    },
+    // taxId: {
+    //   type: String,
+    //   required: [true, "Tax ID is required"],
+    //   unique: true,
+    // },
     documentType: {
       type: String,
       enum: {
@@ -150,19 +150,11 @@ const TenantSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Tenant name is required"],
-      unique: true,
-      trim: true,
+      required: true,
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
-      unique: true,
-      lowercase: true,
-      validate: {
-        validator: validator.isEmail,
-        message: "Please provide a valid email",
-      },
+      required: true,
     },
     password: {
       type: String,
@@ -170,18 +162,12 @@ const TenantSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: String,
-      validate: {
-        validator: function (v) {
-          return validator.isMobilePhone(v, "any");
-        },
-        message: "Please provide a valid phone number",
-      },
     },
-    adminUser: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
+    // adminUser: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "User",
+    //   required: true,
+    // },
     branding: {
       logo: String,
       primaryColor: {
@@ -355,22 +341,22 @@ const EventSchema = new mongoose.Schema(
       accountNumber: {
         type: String,
         required: [true, "Account number is required"],
-        validate: {
-          validator: function (v) {
-            return /^[0-9]{10,16}$/.test(v); // Stripe expects a valid numeric account number
-          },
-          message: "Invalid account number",
-        },
+        // validate: {
+        //   validator: function (v) {
+        //     return /^[0-9]{10,16}$/.test(v); // Stripe expects a valid numeric account number
+        //   },
+        //   message: "Invalid account number",
+        // },
       },
       routingNumber: {
         type: String,
         required: [true, "Routing number is required"],
-        validate: {
-          validator: function (v) {
-            return /^[0-9]{9}$/.test(v); // Validates 9-digit US routing numbers
-          },
-          message: "Invalid routing number",
-        },
+        // validate: {
+        //   validator: function (v) {
+        //     return /^[0-9]{9}$/.test(v); // Validates 9-digit US routing numbers
+        //   },
+        //   message: "Invalid routing number",
+        // },
       },
       currency: {
         type: String,
@@ -453,6 +439,67 @@ const EventSchema = new mongoose.Schema(
 );
 
 // Booking Model
+// const BookingSchema = new mongoose.Schema(
+//   {
+//     event: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Event",
+//       required: [true, "Event is required"],
+//     },
+//     user: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User",
+//       required: [true, "User is required"],
+//     },
+//     ticketDetails: [
+//       {
+//         type: {
+//           type: String,
+//           required: [true, "Ticket type is required"],
+//         },
+//         quantity: {
+//           type: Number,
+//           required: [true, "Ticket quantity is required"],
+//           min: [1, "Ticket quantity must be at least 1"],
+//         },
+//         price: {
+//           type: Number,
+//           required: [true, "Ticket price is required"],
+//           min: [0, "Ticket price cannot be negative"],
+//         },
+//       },
+//     ],
+//     totalPrice: {
+//       type: Number,
+//       required: [true, "Total price is required"],
+//       min: [0, "Total price cannot be negative"],
+//     },
+//     paymentDetails: {
+//       stripePaymentIntentId: String,
+//       stripeChargeId: String,
+//       status: {
+//         type: String,
+//         enum: {
+//           values: ["pending", "paid", "failed", "refunded"],
+//           message: "Invalid payment status",
+//         },
+//         default: "pending",
+//       },
+//       receiptUrl: String,
+//     },
+//     status: {
+//       type: String,
+//       enum: {
+//         values: ["confirmed", "cancelled"],
+//         message: "Invalid booking status",
+//       },
+//       default: "confirmed",
+//     },
+//     qrCode: String,
+//   },
+//   { timestamps: true }
+// );
+
 const BookingSchema = new mongoose.Schema(
   {
     event: {
@@ -489,8 +536,9 @@ const BookingSchema = new mongoose.Schema(
       min: [0, "Total price cannot be negative"],
     },
     paymentDetails: {
-      stripePaymentIntentId: String,
-      stripeChargeId: String,
+      razorpayOrderId: String,
+      razorpayPaymentId: String,
+      razorpaySignature: String,
       status: {
         type: String,
         enum: {
@@ -504,12 +552,15 @@ const BookingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["confirmed", "cancelled"],
+        values: ["pending", "confirmed", "cancelled"],
         message: "Invalid booking status",
       },
-      default: "confirmed",
+      default: "pending",
     },
-    qrCode: String,
+    qrCode: {
+      data: String,
+      contentType: String,
+    },
   },
   { timestamps: true }
 );

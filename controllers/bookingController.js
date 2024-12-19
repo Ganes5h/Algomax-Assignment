@@ -1,5 +1,5 @@
 const { Booking } = require("../models/UserModel");
-const { Event } = require("../models/UserModel");
+const { Event, User } = require("../models/UserModel");
 const dotenv = require("dotenv");
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -351,3 +351,259 @@ exports.createPaymentIntent = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Utility functions for QR generation and email
+const qrcode = require("qrcode");
+const nodemailer = require("nodemailer");
+const multer = require("multer");
+const path = require("path");
+const crypto = require("crypto");
+
+// Multer configuration for QR code storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/qrcodes");
+  },
+  filename: function (req, file, cb) {
+    cb(null, `qr-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// Email configuration
+const transporter = nodemailer.createTransport({
+  service: "gmail", // Use your email service
+  auth: {
+    user: process.env.SMTP_EMIAL, // Your email
+    pass: process.env.SMTP_PASS, // Your email password or app password
+  },
+});
+
+// Razorpay configuration
+const Razorpay = require("razorpay");
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+// console.log(process.env.RAZORPAY_KEY_ID, "Id", process.env.RAZORPAY_KEY_SECRET);
+// Booking Controller
+exports.BookingController = {
+  // Create a new booking and initialize Razorpay payment
+
+  createBooking: async (req, res) => {
+    try {
+      console.log("Request received at createBooking:", req.body); // Debug incoming request
+
+      const { eventId, ticketDetails, userId } = req.body;
+
+      if (!eventId || !ticketDetails || !userId) {
+        console.error("Missing required fields in request body.");
+        return res.status(400).json({
+          success: false,
+          message: "eventId, ticketDetails, and userId are required.",
+        });
+      }
+
+      // Calculate total price
+      const totalPrice = ticketDetails.reduce((sum, ticket) => {
+        if (!ticket.price || !ticket.quantity) {
+          console.error("Invalid ticket details:", ticket);
+        }
+        return sum + ticket.price * ticket.quantity;
+      }, 0);
+
+      console.log("Calculated total price:", totalPrice);
+
+      if (totalPrice <= 0) {
+        console.error("Total price is invalid:", totalPrice);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid total price calculated.",
+        });
+      }
+
+      // Create Razorpay order
+      const order = await razorpay.orders.create({
+        amount: totalPrice * 100, // Convert to paise
+        currency: "INR",
+        receipt: `receipt_${Date.now()}`,
+      });
+
+      console.log("Razorpay order created:", order);
+
+      if (!order || !order.id) {
+        console.error("Failed to create Razorpay order.");
+        return res.status(500).json({
+          success: false,
+          message: "Failed to create Razorpay order.",
+        });
+      }
+
+      // Create booking record
+      const booking = new Booking({
+        event: eventId,
+        user: userId,
+        ticketDetails,
+        totalPrice,
+        paymentDetails: {
+          razorpayOrderId: order.id,
+          status: "pending",
+        },
+        status: "pending",
+      });
+
+      console.log("Booking to be saved:", booking);
+
+      await booking.save();
+
+      console.log("Booking saved successfully:", booking);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          orderId: order.id,
+          booking: booking,
+        },
+      });
+    } catch (error) {
+      console.error("Error in createBooking:", error.message, error.stack);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+
+  // Verify payment and update booking status
+  verifyPayment: async (req, res) => {
+    try {
+      const { razorpayOrderId, razorpayPaymentId, razorpaySignature } =
+        req.body;
+
+      // Verify signature
+      const generated_signature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest("hex");
+
+      if (generated_signature !== razorpaySignature) {
+        throw new Error("Invalid payment signature");
+      }
+
+      // Update booking status
+      const booking = await Booking.findOne({
+        "paymentDetails.razorpayOrderId": razorpayOrderId,
+      });
+
+      if (!booking) {
+        throw new Error("Booking not found");
+      }
+
+      // Generate QR code
+      const qrData = {
+        bookingId: booking._id,
+        eventId: booking.event,
+        userId: booking.user,
+      };
+
+      const qrCodePath = path.join(
+        __dirname,
+        "../uploads/qrcodes",
+        `qr-${booking._id}.png`
+      );
+      await qrcode.toFile(qrCodePath, JSON.stringify(qrData));
+
+      // Update booking with payment and QR details
+      booking.paymentDetails.razorpayPaymentId = razorpayPaymentId;
+      booking.paymentDetails.razorpaySignature = razorpaySignature;
+      booking.paymentDetails.status = "paid";
+      booking.status = "confirmed";
+      booking.qrCode = {
+        data: qrCodePath,
+        contentType: "image/png",
+      };
+
+      await booking.save();
+
+      // Send confirmation email with QR code
+      const event = await Event.findById(booking.event);
+      const user = await User.findById(booking.user);
+
+      const mailOptions = {
+        from: process.env.SMTP_EMAIL,
+        to: user.email,
+        subject: `Booking Confirmation - ${event.title}`,
+        html: `
+          <h1>Booking Confirmation</h1>
+          <p>Thank you for booking tickets for ${event.title}!</p>
+          <p>Your booking details:</p>
+          <ul>
+            <li>Event: ${event.title}</li>
+            <li>Date: ${event.date}</li>
+            <li>Time: ${event.time}</li>
+            <li>Venue: ${event.location.venue}</li>
+          </ul>
+          <p>Please present the attached QR code at the venue entrance.</p>
+        `,
+        attachments: [
+          {
+            filename: "qrcode.png",
+            path: qrCodePath,
+          },
+        ],
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      res.status(200).json({
+        success: true,
+        message: "Payment verified and booking confirmed",
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+
+  // Verify QR code at venue
+  verifyQRCode: async (req, res) => {
+    try {
+      const { qrData } = req.body;
+
+      // Parse QR data
+      const bookingData = JSON.parse(qrData);
+
+      // Verify booking
+      const booking = await Booking.findOne({
+        _id: bookingData.bookingId,
+        event: bookingData.eventId,
+        user: bookingData.userId,
+        status: "confirmed",
+        "paymentDetails.status": "paid",
+      });
+
+      if (!booking) {
+        throw new Error("Invalid or expired QR code");
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "QR code verified successfully",
+        booking: booking,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+};
+
+// module.exports = {
+//   BookingController,
+// };

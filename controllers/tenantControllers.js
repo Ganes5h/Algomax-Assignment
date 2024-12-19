@@ -1,11 +1,11 @@
 const multer = require("multer");
 const path = require("path");
 const nodemailer = require("nodemailer");
-const { Tenant, TenantKYC } = require("../models/UserModel"); // Assuming your models are exported here
+const { Tenant, TenantKYC, EventAdmin, Event } = require("../models/UserModel"); // Assuming your models are exported here
 const { SuperAdmin } = require("../models/UserModel");
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
-
+const uploads = require("../middleware/TanantUpload");
 // Set up multer storage configuration
 // const storage = multer.diskStorage({
 //   destination: (req, file, cb) => {
@@ -24,35 +24,77 @@ const jwt = require("jsonwebtoken");
 // const upload = multer({ storage: storage }).array("kycDocuments", 5); // Handle multiple document uploads
 
 // Create Tenant
-const createTenant = async (req, res) => {
-  const { name, email, password, adminUser, phoneNumber, branding } = req.body;
+// const createTenant = async (req, res) => {
+//   const { name, email, password, phoneNumber, branding } = req.body;
 
-  try {
-    // Check if the tenant already exists
-    const existingTenant = await Tenant.findOne({ email });
-    if (existingTenant) {
-      return res.status(400).json({ message: "Tenant already exists." });
+//   try {
+//     // Check if the tenant already exists
+//     const existingTenant = await Tenant.findOne({ email });
+//     if (existingTenant) {
+//       return res.status(400).json({ message: "Tenant already exists." });
+//     }
+
+//     // Create new Tenant
+//     const newTenant = await Tenant.create({
+//       name,
+//       email,
+//       password,
+//       adminUser,
+//       phoneNumber,
+//       branding,
+//     });
+
+//     res.status(201).json({
+//       message: "Tenant created successfully.",
+//       tenant: newTenant,
+//     });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ message: "Error creating Tenant.", error: error.message });
+//   }
+// };
+
+// Initialize Multer with storage and file filter
+
+const createTenant = async (req, res) => {
+  const { name, email, password, phoneNumber, branding } = req.body;
+
+  // Handle logo file upload using Multer
+  uploads.single("logo")(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message }); // Error handling for Multer
     }
 
-    // Create new Tenant
-    const newTenant = await Tenant.create({
-      name,
-      email,
-      password,
-      adminUser,
-      phoneNumber,
-      branding,
-    });
+    try {
+      // Check if the tenant already exists
+      const existingTenant = await Tenant.findOne({ email });
+      if (existingTenant) {
+        return res.status(400).json({ message: "Tenant already exists." });
+      }
 
-    res.status(201).json({
-      message: "Tenant created successfully.",
-      tenant: newTenant,
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error creating Tenant.", error: error.message });
-  }
+      // Create new Tenant with logo
+      const newTenant = await Tenant.create({
+        name,
+        email,
+        password,
+        phoneNumber,
+        branding: {
+          ...branding,
+          logo: req.file ? req.file.path : "", // Store the logo path in branding
+        },
+      });
+
+      res.status(201).json({
+        message: "Tenant created successfully.",
+        tenant: newTenant,
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error creating Tenant.", error: error.message });
+    }
+  });
 };
 
 // Login Tenant API
@@ -124,7 +166,7 @@ const uploadSingleDocument = (req, res) => {
         .json({ message: "File upload error.", error: err.message });
     }
 
-    const { tenantId, companyName, registrationNumber, taxId, documentType } =
+    const { tenantId, companyName, registrationNumber, documentType } =
       req.body;
 
     try {
@@ -140,7 +182,6 @@ const uploadSingleDocument = (req, res) => {
         tenant: tenantId,
         companyName,
         registrationNumber,
-        taxId,
         documentType,
         documentUrls: [documentUrl], // Save the uploaded document URL
       });
@@ -452,9 +493,220 @@ const sendVerificationEmail = async (tenantIds, verificationStatus) => {
   }
 };
 
+const crypto = require("crypto");
+
+// Configure nodemailer
+const transporter = nodemailer.createTransport({
+  service: "gmail", // Use your email service
+  auth: {
+    user: process.env.SMTP_EMIAL, // Your email
+    pass: process.env.SMTP_PASS, // Your email password or app password
+  },
+});
+
+// Helper: Generate a random password
+const generateRandomPassword = () => {
+  return crypto.randomBytes(6).toString("hex"); // Generates a 12-character password
+};
+
+// Add Event Admin by Tenant
+const addEventAdmin = async (req, res) => {
+  const { tenantId } = req.params;
+  const { name, email, permissions } = req.body;
+
+  try {
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found" });
+    }
+
+    // Check if the email is valid and not already in use
+    const existingAdmin = await EventAdmin.findOne({ email });
+    if (existingAdmin) {
+      return res.status(400).json({ message: "Email is already in use" });
+    }
+
+    // Generate a random password
+    const randomPassword = generateRandomPassword();
+
+    // Create Event Admin with the generated password
+    const newEventAdmin = new EventAdmin({
+      tenant: tenantId,
+      email,
+      password: randomPassword,
+      name,
+      permissions,
+    });
+
+    await newEventAdmin.save();
+
+    // Update Tenant's eventAdmins array
+    tenant.eventAdmins.push(newEventAdmin._id);
+    await tenant.save();
+
+    // Send email with credentials
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "You have been added as an Event Admin",
+      text: `Dear ${name},\n\nYou have been added as an Event Admin for ${tenant.name}. Below are your login credentials:\n\nEmail: ${email}\nPassword: ${randomPassword}\n\nPlease login and manage the events assigned to you.\n\nBest regards,\nEvent Management Team`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(201).json({
+      message: "Event Admin added successfully and credentials emailed",
+      eventAdmin: newEventAdmin,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// Assign Event to Event Admin
+const assignEventToAdmin = async (req, res) => {
+  const { tenantId, adminId, eventId } = req.body;
+
+  try {
+    // Validate the tenant ID
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found" });
+    }
+
+    // Find the Event Admin
+    const eventAdmin = await EventAdmin.findById(adminId);
+    if (!eventAdmin) {
+      return res.status(404).json({ message: "Event Admin not found" });
+    }
+
+    // Find the Event
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Debugging fetched data
+    console.log({ tenant, eventAdmin, event });
+
+    // Safely compare tenant relationships
+    // if (
+    //   String(event.tenant) !== String(tenant._id) ||
+    //   String(eventAdmin.tenant) !== String(tenant._id)
+    // ) {
+    //   return res.status(400).json({
+    //     message:
+    //       "Event and Event Admin must belong to the same tenant as specified by the tenantId",
+    //   });
+    // }
+
+    // Assign event to Event Admin if not already assigned
+    if (!eventAdmin.assignedEvents.includes(eventId)) {
+      eventAdmin.assignedEvents.push(eventId);
+      await eventAdmin.save();
+    }
+
+    // Send email notification for event assignment
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: eventAdmin.email,
+      subject: "Event Management Task Assigned",
+      text: `Dear ${eventAdmin.name},\n\nYou have been assigned the management task for the following event:\n\nEvent: ${event.title}\nDate: ${event.date}\nLocation: ${event.location.venue}, ${event.location.city}, ${event.location.country}\n\nPlease log in and manage the event responsibly.\n\nBest regards,\nEvent Management Team`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      message:
+        "Event assigned to Event Admin successfully and notification emailed",
+      eventAdmin,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const loginEventAdmin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // Check if the event admin exists
+    const eventAdmin = await EventAdmin.findOne({ email });
+    if (!eventAdmin) {
+      return res.status(404).json({ message: "Event Admin not found" });
+    }
+
+    // Use the schema's comparePassword method to verify the password
+    const isPasswordValid = await eventAdmin.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: eventAdmin._id,
+        name: eventAdmin.name,
+        email: eventAdmin.email,
+        tenantId: eventAdmin.tenant,
+      },
+      process.env.JWT_SECRET, // Ensure to set a secure secret in your environment variables
+      { expiresIn: "1h" } // Token expiration time
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      eventAdmin: {
+        id: eventAdmin._id,
+        name: eventAdmin.name,
+        email: eventAdmin.email,
+        permissions: eventAdmin.permissions,
+        assignedEvents: eventAdmin.assignedEvents,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Controller to get all tenants' information
+const getAllTenants = async (req, res) => {
+  try {
+    const tenants = await Tenant.find()
+      .populate("eventAdmins", "name email") // Populate eventAdmins with specific fields
+      .populate({
+        path: "kycDetails",
+        populate: {
+          path: "verifiedBy",
+          model: "SuperAdmin",
+          select: "name email", // Include name and email of SuperAdmin
+        },
+      })
+      .exec();
+
+    res.status(200).json({
+      message: "Tenants fetched successfully.",
+      tenants,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching tenants.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTenant,
   loginTenant,
+  addEventAdmin,
+  assignEventToAdmin,
+  loginEventAdmin,
+  getAllTenants,
   // uploadKYC,
   uploadSingleDocument,
   updateTenantKYC,
