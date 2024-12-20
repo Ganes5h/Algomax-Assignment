@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const QRCode = require("qrcode");
-
+const mongoose = require("mongoose");
 // Create a new booking
 exports.createBooking = async (req, res) => {
   try {
@@ -492,7 +492,7 @@ exports.BookingController = {
         throw new Error("Invalid payment signature");
       }
 
-      // Update booking status
+      // Find booking
       const booking = await Booking.findOne({
         "paymentDetails.razorpayOrderId": razorpayOrderId,
       });
@@ -501,66 +501,127 @@ exports.BookingController = {
         throw new Error("Booking not found");
       }
 
-      // Generate QR code
-      const qrData = {
-        bookingId: booking._id,
-        eventId: booking.event,
-        userId: booking.user,
-      };
-
-      const qrCodePath = path.join(
-        __dirname,
-        "../uploads/qrcodes",
-        `qr-${booking._id}.png`
-      );
-      await qrcode.toFile(qrCodePath, JSON.stringify(qrData));
-
-      // Update booking with payment and QR details
-      booking.paymentDetails.razorpayPaymentId = razorpayPaymentId;
-      booking.paymentDetails.razorpaySignature = razorpaySignature;
-      booking.paymentDetails.status = "paid";
-      booking.status = "confirmed";
-      booking.qrCode = {
-        data: qrCodePath,
-        contentType: "image/png",
-      };
-
-      await booking.save();
-
-      // Send confirmation email with QR code
+      // Find event to update ticket quantities
       const event = await Event.findById(booking.event);
-      const user = await User.findById(booking.user);
+      if (!event) {
+        throw new Error("Event not found");
+      }
 
-      const mailOptions = {
-        from: process.env.SMTP_EMAIL,
-        to: user.email,
-        subject: `Booking Confirmation - ${event.title}`,
-        html: `
-          <h1>Booking Confirmation</h1>
-          <p>Thank you for booking tickets for ${event.title}!</p>
-          <p>Your booking details:</p>
-          <ul>
-            <li>Event: ${event.title}</li>
-            <li>Date: ${event.date}</li>
-            <li>Time: ${event.time}</li>
-            <li>Venue: ${event.location.venue}</li>
-          </ul>
-          <p>Please present the attached QR code at the venue entrance.</p>
-        `,
-        attachments: [
-          {
-            filename: "qrcode.png",
-            path: qrCodePath,
-          },
-        ],
-      };
+      // Start a session for transaction
+      const session = await mongoose.startSession();
+      session.startTransaction();
 
-      await transporter.sendMail(mailOptions);
+      try {
+        // Update ticket quantities for each ticket type in the booking
+        for (const bookedTicket of booking.ticketDetails) {
+          const ticketTypeIndex = event.ticketDetails.pricing.findIndex(
+            (ticket) => ticket.type === bookedTicket.type
+          );
 
-      res.status(200).json({
-        success: true,
-        message: "Payment verified and booking confirmed",
-      });
+          if (ticketTypeIndex === -1) {
+            throw new Error(`Invalid ticket type: ${bookedTicket.type}`);
+          }
+
+          const currentAvailable =
+            event.ticketDetails.pricing[ticketTypeIndex].availableQuantity;
+          if (currentAvailable < bookedTicket.quantity) {
+            throw new Error(
+              `Not enough ${bookedTicket.type} tickets available`
+            );
+          }
+
+          // Decrease available quantity for the specific ticket type
+          event.ticketDetails.pricing[ticketTypeIndex].availableQuantity -=
+            bookedTicket.quantity;
+        }
+
+        // Update total available tickets
+        const totalBookedTickets = booking.ticketDetails.reduce(
+          (sum, ticket) => sum + ticket.quantity,
+          0
+        );
+        event.ticketDetails.availableTickets -= totalBookedTickets;
+
+        // Save event with updated ticket quantities
+        await event.save({ session });
+
+        // Generate QR code
+        const qrData = {
+          bookingId: booking._id,
+          eventId: booking.event,
+          userId: booking.user,
+        };
+
+        const qrCodePath = path.join(
+          __dirname,
+          "../uploads/qrcodes",
+          `qr-${booking._id}.png`
+        );
+        await qrcode.toFile(qrCodePath, JSON.stringify(qrData));
+
+        // Update booking with payment and QR details
+        booking.paymentDetails.razorpayPaymentId = razorpayPaymentId;
+        booking.paymentDetails.razorpaySignature = razorpaySignature;
+        booking.paymentDetails.status = "paid";
+        booking.status = "confirmed";
+        booking.qrCode = {
+          data: qrCodePath,
+          contentType: "image/png",
+        };
+
+        await booking.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+
+        // Send confirmation email with QR code
+        const user = await User.findById(booking.user);
+
+        const mailOptions = {
+          from: process.env.SMTP_EMAIL,
+          to: user.email,
+          subject: `Booking Confirmation - ${event.title}`,
+          html: `
+            <h1>Booking Confirmation</h1>
+            <p>Thank you for booking tickets for ${event.title}!</p>
+            <p>Your booking details:</p>
+            <ul>
+              <li>Event: ${event.title}</li>
+              <li>Date: ${event.date}</li>
+              <li>Time: ${event.time}</li>
+              <li>Venue: ${event.location.venue}</li>
+              ${booking.ticketDetails
+                .map(
+                  (ticket) =>
+                    `<li>${ticket.type} Tickets: ${ticket.quantity} x $${ticket.price}</li>`
+                )
+                .join("")}
+              <li>Total Amount: $${booking.totalPrice}</li>
+            </ul>
+            <p>Please present the attached QR code at the venue entrance.</p>
+          `,
+          attachments: [
+            {
+              filename: "qrcode.png",
+              path: qrCodePath,
+            },
+          ],
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({
+          success: true,
+          message: "Payment verified and booking confirmed",
+        });
+      } catch (error) {
+        // If there's an error, abort the transaction
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        // End the session
+        session.endSession();
+      }
     } catch (error) {
       res.status(500).json({
         success: false,
