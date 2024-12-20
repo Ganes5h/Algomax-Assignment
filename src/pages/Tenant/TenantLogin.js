@@ -10,11 +10,17 @@ import {
   CircularProgress,
   Box,
   Alert,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -25,25 +31,33 @@ const Login = () => {
     e.preventDefault();
     dispatch(loginTenant(email, password)).then(() => {
       if (!error) {
-        navigate("/dashboard"); // Navigate to dashboard on successful login
+        navigate("/tenant-layout/analytics"); // Navigate to dashboard on successful login
       }
     });
   };
 
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
+
   return (
-    <Container maxWidth="xs">
+    <Container
+      maxWidth="xs"
+      className="flex justify-center items-center h-screen"
+    >
       <Box
         component="form"
+        style={{ minWidth: "800px" }}
         onSubmit={handleLogin}
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          mt: 4,
-        }}
+        className="flex flex-col items-center p-8 bg-white rounded-lg shadow-md"
       >
+        <LockOutlinedIcon color="primary" fontSize="large" />
         <Typography variant="h4" component="h1" gutterBottom>
-          Login
+          Tenant Login
         </Typography>
         {error && <Alert severity="error">{error}</Alert>}
         <TextField
@@ -57,19 +71,32 @@ const Login = () => {
         />
         <TextField
           label="Password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           fullWidth
           margin="normal"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={handleClickShowPassword}
+                  onMouseDown={handleMouseDownPassword}
+                >
+                  {showPassword ? <Visibility /> : <VisibilityOff />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
         <Button
           type="submit"
           variant="contained"
           color="primary"
           fullWidth
-          sx={{ mt: 2 }}
+          className="mt-4"
           disabled={loading}
         >
           {loading ? <CircularProgress size={24} /> : "Login"}

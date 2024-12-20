@@ -229,7 +229,7 @@ const TenantKYCVerification = () => {
             <TableRow>
               <TableCell>Company Name</TableCell>
               <TableCell>Registration Number</TableCell>
-              <TableCell>Tax ID</TableCell>
+
               <TableCell>Document Type</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Actions</TableCell>
@@ -240,7 +240,7 @@ const TenantKYCVerification = () => {
               <TableRow key={tenant._id}>
                 <TableCell>{tenant.companyName}</TableCell>
                 <TableCell>{tenant.registrationNumber}</TableCell>
-                <TableCell>{tenant.taxId}</TableCell>
+
                 <TableCell>{tenant.documentType}</TableCell>
                 <TableCell>
                   <Chip label="Pending" color="warning" variant="outlined" />

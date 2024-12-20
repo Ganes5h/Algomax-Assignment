@@ -7,9 +7,11 @@ import {
   TextField,
   Typography,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -20,6 +22,7 @@ const Login = () => {
     email: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,7 +50,7 @@ const Login = () => {
         title: "Login Successful",
         text: "Welcome back!",
       }).then(() => {
-        navigate("/dashboard"); // Adjust the route as needed for successful login
+        navigate("/all-events"); // Adjust the route as needed for successful login
       });
     } else if (error) {
       Swal.fire({
@@ -58,66 +61,95 @@ const Login = () => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        margin: "auto",
-        marginTop: 8,
-        padding: 4,
-        border: "1px solid #e0e0e0",
-        borderRadius: 2,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    <div
+      style={{
+        marginTop: "80px",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      <Typography variant="h4" component="h1" align="center" gutterBottom>
-        Login
-      </Typography>
-      <form onSubmit={handleLogin}>
-        <TextField
-          fullWidth
-          label="Email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          margin="normal"
-          type="email"
-          required
-        />
-        <TextField
-          fullWidth
-          label="Password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          margin="normal"
-          type="password"
-          required
-        />
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          sx={{ marginTop: 3 }}
-          disabled={loading}
-        >
-          {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
-        </Button>
-        <Typography
-          variant="body2"
-          sx={{
-            textAlign: "center",
-            marginTop: 2,
-            cursor: "pointer",
-            color: "blue",
-            textDecoration: "underline",
-          }}
-          onClick={() => navigate("/public-register")}
-        >
-          Don't have an account? Register
+      <Box
+        sx={{
+          maxWidth: 800,
+          margin: "auto",
+          marginTop: 8,
+          padding: 4,
+          border: "1px solid #e0e0e0",
+          borderRadius: 2,
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Typography variant="h4" component="h1" align="center" gutterBottom>
+          Login
         </Typography>
-      </form>
-    </Box>
+        <form onSubmit={handleLogin}>
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            margin="normal"
+            type="email"
+            required
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            margin="normal"
+            type={showPassword ? "text" : "password"} // Toggle between text and password type
+            required
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={togglePasswordVisibility}
+                  edge="end"
+                  sx={{ padding: 0 }}
+                >
+                  {showPassword ? (
+                    <VisibilityOff color="action" />
+                  ) : (
+                    <Visibility color="action" />
+                  )}
+                </IconButton>
+              ),
+            }}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{ marginTop: 3 }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
+          </Button>
+          <Typography
+            variant="body2"
+            sx={{
+              textAlign: "center",
+              marginTop: 2,
+              cursor: "pointer",
+              color: "blue",
+              textDecoration: "underline",
+            }}
+            onClick={() => navigate("/public-register")}
+          >
+            Don't have an account? Register
+          </Typography>
+        </form>
+      </Box>
+    </div>
   );
 };
 

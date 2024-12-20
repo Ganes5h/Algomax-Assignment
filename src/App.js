@@ -24,7 +24,13 @@ import CreateEvent from "./pages/Tenant/CreateEvent";
 import TenantRegisterStepper from "./pages/Tenant/Register/TananetStepper";
 import AllTenantsForadmin from "./pages/Admin/AllTenants";
 import EventCreationForm from "./pages/CreateEvent";
-
+import TenantLayout from "./pages/Tenant/Layout/Index";
+import AnalyticsTanent from "./pages/Tenant/Layout/Analytics";
+import AllEventsTenant from "./pages/Tenant/Layout/AllEventsTanent";
+import EventAdmins from "./pages/Tenant/Layout/EventAdmin";
+import UserTickets from "./components/UserTickets";
+import ProtectedLayoutUser from "./components/ProtectedRouteUser";
+import ProtectedLayoutTenant from "./components/ProtectedLayoutTenant";
 function App() {
   return (
     <>
@@ -63,23 +69,44 @@ function App() {
             path="/all-events"
             element={
               <>
+                {/* <ProtectedLayoutUser> */}
                 <PlatformNavbar />
                 <GetAllEvents />
+                {/* </ProtectedLayoutUser> */}
+              </>
+            }
+          />
+          <Route
+            path="/my-events"
+            element={
+              <>
+                {/* <ProtectedLayoutUser> */}
+                <PlatformNavbar />
+                <UserTickets />
+                {/* </ProtectedLayoutUser> */}
               </>
             }
           />
           <Route path="/superadmin-login" element={<SuperAdminLogin />} />
-          <Route path="/tanant-reg" element={<TenantRegisterStepper />} />
-          <Route path="/create-e" element={<EventCreationForm />} />
           <Route
             path="/tanent-register"
+            element={
+              <>
+                <PlatformNavbar />
+                <TenantRegisterStepper />
+              </>
+            }
+          />
+          <Route path="/create-e" element={<EventCreationForm />} />
+          {/* <Route
+            path="/tanent-regist"
             element={
               <>
                 <PlatformNavbar />
                 <TenantRegistrationStepper />/
               </>
             }
-          />
+          /> */}
           <Route
             path="/create-event"
             element={
@@ -89,8 +116,34 @@ function App() {
               </>
             }
           />
-          <Route path="/tanent-login" element={<TenantLogin />} />
+          <Route
+            path="/tanent-login"
+            element={
+              <>
+                <PlatformNavbar />
+                <TenantLogin />
+              </>
+            }
+          />
           {/* <Route path="/admin-login" element={<AdminLogin />} /> */}
+
+          <Route
+            exact
+            path="/tenant-layout/"
+            element={
+              <>
+                {/* <ProtectedLayoutTenant> */}
+                <TenantLayout />
+                {/* </ProtectedLayoutTenant> */}
+              </>
+            }
+          >
+            <Route path="analytics" element={<AnalyticsTanent />} />
+            <Route path="create-event" element={<EventCreationForm />} />
+            <Route path="all-events-tenant" element={<AllEventsTenant />} />
+            <Route path="event-admin-management" element={<EventAdmins />} />
+          </Route>
+
           <Route exact path="/dashboard-layout/" element={<AdminDashboard />}>
             <Route index path="analytics" element={<SuperAdminAnalytics />} />
             <Route
@@ -114,7 +167,7 @@ function App() {
           /> */}
         </Routes>
       </Router>
-      <FooterSection />
+      {/* <FooterSection /> */}
     </>
   );
 }

@@ -364,6 +364,7 @@
 // };
 
 // export default CardComponent;
+
 import React, { useState, useEffect } from "react";
 import {
   Card,
@@ -383,16 +384,22 @@ import {
   MenuItem,
   Box,
   IconButton,
+  Skeleton,
 } from "@mui/material";
 import axios from "axios";
 import Swal from "sweetalert2"; // Import SweetAlert2
 
 const EventListing = () => {
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [ticketSelections, setTicketSelections] = useState({});
   const [openDialog, setOpenDialog] = useState(false);
+  const [openDialog2, setOpenDialog2] = useState(false);
   const razorpayKeyId = process.env.REACT_APP_RAZORPAY_KEY_ID;
+  const userData = localStorage.getItem("user");
+  const parsedUserData = JSON.parse(userData);
+  console.log(parsedUserData.id);
 
   useEffect(() => {
     fetchEvents();
@@ -404,6 +411,7 @@ const EventListing = () => {
         "http://localhost:4000/api/events/getallevents"
       );
       setEvents(response.data.events);
+      setLoading(false);
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -454,7 +462,7 @@ const EventListing = () => {
         {
           eventId: selectedEvent._id,
           ticketDetails,
-          userId: "67533ea6ae408d900db76423", // Replace with actual user ID from your auth system
+          userId: parsedUserData.id, // Replace with actual user ID from your auth system
         }
       );
 
@@ -508,48 +516,88 @@ const EventListing = () => {
     }
   };
 
+  const handleTicketInfo = (event) => {
+    setSelectedEvent(event);
+    setOpenDialog2(true);
+  };
+
+  const formatTicketInfo = () => {
+    if (!selectedEvent) return "";
+
+    return selectedEvent.ticketDetails.pricing
+      .map((ticket) => {
+        const isSoldOut = ticket.availableQuantity === 0;
+        return `${ticket.type} Tickets:\n${
+          isSoldOut
+            ? "Sold Out"
+            : `${ticket.availableQuantity} left out of ${ticket.quantity},`
+        }`;
+      })
+      .join("\n");
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4, mt: 12 }}>
       <Grid container spacing={4}>
-        {events.map((event) => (
-          <Grid item xs={12} sm={6} md={4} key={event._id}>
-            <Card
-              sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-            >
-              <CardMedia
-                component="img"
-                height="200"
-                image={`http://localhost:4000/${event.poster.replace(
-                  "\\",
-                  "/"
-                )}`}
-                alt={event.title}
-              />
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Typography gutterBottom variant="h5" component="h2">
-                  {event.title}
-                </Typography>
-                <Typography>{event.description}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {`${event.location.venue}, ${event.location.city}`}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {new Date(event.date).toLocaleDateString()} at {event.time}
-                </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  sx={{ mt: 2 }}
-                  onClick={() => handleBooking(event)}
-                >
-                  Book Tickets
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+        {loading
+          ? // Loading skeletons
+            Array.from(new Array(6)).map((_, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Skeleton variant="rectangular" width="100%" height={200} />
+                <Skeleton width="60%" />
+                <Skeleton width="80%" />
+                <Skeleton width="40%" />
+                <Skeleton width="30%" />
+              </Grid>
+            ))
+          : // Events mapping
+            events.map((event) => (
+              <Grid item xs={12} sm={6} md={4} key={event._id}>
+                <Card className="max-w-sm mx-5 my-5 rounded-xl shadow-lg">
+                  <CardMedia
+                    className="h-52"
+                    component="img"
+                    image={`http://localhost:4000/${event.poster.replace(
+                      "\\",
+                      "/"
+                    )}`}
+                    alt={event.title}
+                  />
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography gutterBottom variant="h5" component="h2">
+                      {event.title}
+                    </Typography>
+                    <Typography>{event.description}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {`${event.location.venue}, ${event.location.city}`}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {new Date(event.date).toLocaleDateString()} at{" "}
+                      {event.time}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{ mt: 2 }}
+                      onClick={() => handleBooking(event)}
+                    >
+                      Book Tickets
+                    </Button>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{ mt: 2 }}
+                      onClick={() => handleTicketInfo(event)}
+                    >
+                      Ticket Info
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
       </Grid>
 
+      {/* Dialog for Booking Tickets */}
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
@@ -665,6 +713,25 @@ const EventListing = () => {
             disabled={calculateTotal() === 0}
           >
             Proceed to Payment
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog for Ticket Info */}
+      <Dialog
+        open={openDialog2}
+        onClose={() => setOpenDialog2(false)}
+        aria-labelledby="ticket-info-dialog"
+      >
+        <DialogTitle id="ticket-info-dialog">
+          {selectedEvent?.title} - Ticket Information
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{formatTicketInfo()}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog2(false)} color="primary">
+            Close
           </Button>
         </DialogActions>
       </Dialog>

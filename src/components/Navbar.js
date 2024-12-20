@@ -19,129 +19,57 @@ import {
   AccountCircle,
   Event,
   Dashboard,
-  Payment,
-  Help,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
 const drawerWidth = 240;
 
 const navRoutes = [
-  {
-    label: "Events",
-    path: "/events",
-    icon: <Event />,
-    subMenu: [
-      { label: "Browse Events", path: "/events/browse" },
-      { label: "Create Event", path: "/events/create" },
-    ],
-  },
-  {
-    label: "Dashboard",
-    path: "/dashboard",
-    icon: <Dashboard />,
-    subMenu: [
-      { label: "My Events", path: "/dashboard/events" },
-      { label: "Analytics", path: "/dashboard/analytics" },
-    ],
-  },
-  {
-    label: "Tickets",
-    path: "/tickets",
-    icon: <Payment />,
-    subMenu: [
-      { label: "My Bookings", path: "/tickets/bookings" },
-      { label: "Wishlist", path: "/tickets/wishlist" },
-    ],
-  },
-  {
-    label: "Support",
-    path: "/support",
-    icon: <Help />,
-  },
+  { label: "Home", path: "/", icon: null },
+  { label: "Explore Events", path: "/all-events" },
+  { label: "My Events", path: "/my-events" },
 ];
 
 const PlatformNavbar = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [anchorEls, setAnchorEls] = useState({});
+  const [anchorEl, setAnchorEl] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleMenuOpen = (route) => (event) => {
-    setAnchorEls((prev) => ({
-      ...prev,
-      [route.label]: event.currentTarget,
-    }));
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = (route) => () => {
-    setAnchorEls((prev) => ({
-      ...prev,
-      [route.label]: null,
-    }));
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   const handleNavigation = (path) => {
     navigate(path);
     handleDrawerToggle();
+    handleMenuClose();
   };
 
   const renderNavItems = (isMobile = false) =>
     navRoutes.map((route) => (
-      <React.Fragment key={route.label}>
-        {route.subMenu ? (
-          <>
-            <Button
-              startIcon={route.icon}
-              onClick={handleMenuOpen(route)}
-              sx={{
-                color: "white",
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                },
-              }}
-            >
-              {route.label}
-            </Button>
-            <Menu
-              anchorEl={anchorEls[route.label]}
-              open={Boolean(anchorEls[route.label])}
-              onClose={handleMenuClose(route)}
-            >
-              {route.subMenu.map((subItem) => (
-                <MenuItem
-                  key={subItem.label}
-                  onClick={() => {
-                    handleNavigation(subItem.path);
-                    handleMenuClose(route)();
-                  }}
-                >
-                  {subItem.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          </>
-        ) : (
-          <Button
-            startIcon={route.icon}
-            onClick={() => handleNavigation(route.path)}
-            sx={{
-              color: "white",
-              textTransform: "none",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.1)",
-              },
-            }}
-          >
-            {route.label}
-          </Button>
-        )}
-      </React.Fragment>
+      <Button
+        key={route.label}
+        startIcon={route.icon}
+        onClick={() => handleNavigation(route.path)}
+        sx={{
+          color: "white",
+          textTransform: "none",
+          "&:hover": {
+            backgroundColor: "rgba(255,255,255,0.1)",
+          },
+        }}
+      >
+        {route.label}
+      </Button>
     ));
 
   const drawer = (
@@ -202,6 +130,31 @@ const PlatformNavbar = () => {
 
           <Box sx={{ display: { xs: "none", sm: "block" } }}>
             {renderNavItems()}
+            {/* Dropdown for Register/Login Tenant */}
+            <Button
+              color="inherit"
+              onClick={handleMenuOpen}
+              sx={{
+                textTransform: "none",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                },
+              }}
+            >
+              Register/Login Tenant
+            </Button>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+            >
+              <MenuItem onClick={() => handleNavigation("/tanent-register")}>
+                Register Tenant
+              </MenuItem>
+              <MenuItem onClick={() => handleNavigation("/tanent-login")}>
+                Login Tenant
+              </MenuItem>
+            </Menu>
           </Box>
 
           <Box>
