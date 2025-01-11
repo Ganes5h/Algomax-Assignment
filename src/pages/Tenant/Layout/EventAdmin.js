@@ -20,6 +20,7 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
+import Swal from "sweetalert2";
 
 const TenantAdminTable = () => {
   const [eventData, setEventData] = useState([]);
@@ -103,6 +104,8 @@ const TenantAdminTable = () => {
   );
 
   // Add Admin to the system
+
+  // Add Admin to the system
   const handleAddAdmin = () => {
     if (tenantId) {
       axios
@@ -123,12 +126,26 @@ const TenantAdminTable = () => {
               canManageTickets: false,
             },
           });
+
+          Swal.fire({
+            icon: "success",
+            title: "Admin Added",
+            text: "The admin has been successfully added to the system.",
+          });
         })
         .catch((error) => {
           console.error("Error adding admin:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text:
+              error.response?.data?.message ||
+              "Error adding admin to the system.",
+          });
         });
     }
   };
+
   // Assign Event to Admin
   const handleAssignEvent = () => {
     axios
@@ -139,9 +156,22 @@ const TenantAdminTable = () => {
       })
       .then((response) => {
         setOpenAssignEventDialog(false);
+
+        Swal.fire({
+          icon: "success",
+          title: "Event Assigned",
+          text: "The event has been successfully assigned to the admin.",
+        });
       })
       .catch((error) => {
         console.error("Error assigning event:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            error.response?.data?.message ||
+            "Error assigning event to the admin.",
+        });
       });
   };
 
@@ -275,6 +305,7 @@ const TenantAdminTable = () => {
       <Dialog
         open={openAssignEventDialog}
         onClose={() => setOpenAssignEventDialog(false)}
+        fullWidth
       >
         <DialogTitle>Assign Admin to Event</DialogTitle>
         <DialogContent>

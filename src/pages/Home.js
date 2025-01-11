@@ -52,9 +52,11 @@ const HomePage = () => {
         "Gain powerful insights into your event performance and attendee demographics.",
     },
   ];
+
   const navigatetoEvents = () => {
     navigate("/all-events");
   };
+
   return (
     <Box
       sx={{
@@ -127,7 +129,7 @@ const HomePage = () => {
                 px: 4,
                 py: 1.5,
               }}
-              onClick={navigatetoEvents()}
+              onClick={navigatetoEvents}
             >
               Browse Events
             </Button>

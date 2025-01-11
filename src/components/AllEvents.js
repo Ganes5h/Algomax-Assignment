@@ -396,6 +396,8 @@ const EventListing = () => {
   const [ticketSelections, setTicketSelections] = useState({});
   const [openDialog, setOpenDialog] = useState(false);
   const [openDialog2, setOpenDialog2] = useState(false);
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const razorpayKeyId = process.env.REACT_APP_RAZORPAY_KEY_ID;
   const userData = localStorage.getItem("user");
   const parsedUserData = JSON.parse(userData);
@@ -405,6 +407,9 @@ const EventListing = () => {
     fetchEvents();
   }, []);
 
+  useEffect(() => {
+    filterEventsByCategory();
+  }, [selectedCategory, events]);
   const fetchEvents = async () => {
     try {
       const response = await axios.get(
@@ -516,6 +521,19 @@ const EventListing = () => {
     }
   };
 
+  const filterEventsByCategory = () => {
+    if (selectedCategory) {
+      setFilteredEvents(
+        events.filter((event) => event.category === selectedCategory)
+      );
+    } else {
+      setFilteredEvents(events);
+    }
+  };
+
+  const handleCategoryChange = (event) => {
+    setSelectedCategory(event.target.value);
+  };
   const handleTicketInfo = (event) => {
     setSelectedEvent(event);
     setOpenDialog2(true);
@@ -537,64 +555,90 @@ const EventListing = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, mt: 12 }}>
+    <Container maxWidth="lg" sx={{ py: 4, mt: 6 }}>
+      <Typography variant="h3" className="text-center">
+        All Events
+      </Typography>
+      <FormControl fullWidth sx={{ mb: 4 }}>
+        <InputLabel id="category-label">Filter by Category</InputLabel>
+        <Select
+          labelId="category-label"
+          value={selectedCategory}
+          onChange={handleCategoryChange}
+        >
+          <MenuItem value="">All Categories</MenuItem>
+          <MenuItem value="Conference">Conference</MenuItem>
+          <MenuItem value="Workshop">Workshop</MenuItem>
+          <MenuItem value="Seminar">Seminar</MenuItem>
+          <MenuItem value="Concert">Concert</MenuItem>
+          <MenuItem value="Festival">Festival</MenuItem>
+          <MenuItem value="Sports">Sports</MenuItem>
+          <MenuItem value="Exhibition">Exhibition</MenuItem>
+          <MenuItem value="Networking">Networking</MenuItem>
+          <MenuItem value="Other">Other</MenuItem>
+        </Select>
+      </FormControl>
+
       <Grid container spacing={4}>
-        {loading
-          ? // Loading skeletons
-            Array.from(new Array(6)).map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Skeleton variant="rectangular" width="100%" height={200} />
-                <Skeleton width="60%" />
-                <Skeleton width="80%" />
-                <Skeleton width="40%" />
-                <Skeleton width="30%" />
-              </Grid>
-            ))
-          : // Events mapping
-            events.map((event) => (
-              <Grid item xs={12} sm={6} md={4} key={event._id}>
-                <Card className="max-w-sm mx-5 my-5 rounded-xl shadow-lg">
-                  <CardMedia
-                    className="h-52"
-                    component="img"
-                    image={`http://localhost:4000/${event.poster.replace(
-                      "\\",
-                      "/"
-                    )}`}
-                    alt={event.title}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography gutterBottom variant="h5" component="h2">
-                      {event.title}
-                    </Typography>
-                    <Typography>{event.description}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {`${event.location.venue}, ${event.location.city}`}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(event.date).toLocaleDateString()} at{" "}
-                      {event.time}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      sx={{ mt: 2 }}
-                      onClick={() => handleBooking(event)}
-                    >
-                      Book Tickets
-                    </Button>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      sx={{ mt: 2 }}
-                      onClick={() => handleTicketInfo(event)}
-                    >
-                      Ticket Info
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+        {loading ? (
+          Array.from(new Array(6)).map((_, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Skeleton variant="rectangular" width="100%" height={200} />
+              <Skeleton width="60%" />
+              <Skeleton width="80%" />
+              <Skeleton width="40%" />
+              <Skeleton width="30%" />
+            </Grid>
+          ))
+        ) : filteredEvents.length > 0 ? (
+          filteredEvents.map((event) => (
+            <Grid item xs={12} sm={6} md={4} key={event._id}>
+              <Card className="max-w-sm mx-5 my-5 rounded-xl shadow-lg">
+                <CardMedia
+                  className="h-52"
+                  component="img"
+                  image={`http://localhost:4000/${event.poster.replace(
+                    "\\",
+                    "/"
+                  )}`}
+                  alt={event.title}
+                />
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography gutterBottom variant="h5" component="h2">
+                    {event.title}
+                  </Typography>
+                  <Typography>{event.description}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {`${event.location.venue}, ${event.location.city}`}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {new Date(event.date).toLocaleDateString()} at {event.time}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{ mt: 2 }}
+                    onClick={() => handleBooking(event)}
+                  >
+                    Book Tickets
+                  </Button>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{ mt: 2 }}
+                    onClick={() => handleTicketInfo(event)}
+                  >
+                    Ticket Info
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))
+        ) : (
+          <Typography variant="h6" align="center" sx={{ width: "100%", mt: 4 }}>
+            No events found for the selected category.
+          </Typography>
+        )}
       </Grid>
 
       {/* Dialog for Booking Tickets */}

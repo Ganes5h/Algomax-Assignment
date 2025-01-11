@@ -50,23 +50,21 @@ const UserTickets = () => {
     setCurrentEvent(null);
   };
 
-  //   if (loading) {
-  //     return (
-  //       <Box className="flex justify-center items-center min-h-screen">
-  //         <CircularProgress />
-  //       </Box>
-  //     );
-  //   }
-
   return (
-    <Grid
-      container
-      spacing={3}
-      justifyContent="center"
-      style={{ marginTop: "100px" }}
-    >
-      {loading
-        ? Array.from(new Array(6)).map((_, index) => (
+    <>
+      <div style={{ marginTop: "80px" }}>
+        <Typography variant="h3" className="text-center">
+          My Booked Events
+        </Typography>
+      </div>
+      <Grid
+        container
+        spacing={3}
+        justifyContent="center"
+        // style={{ marginTop: "100px" }}
+      >
+        {loading ? (
+          Array.from(new Array(6)).map((_, index) => (
             <Grid item xs={12} sm={6} md={4} key={index}>
               <Card className="max-w-sm mx-5 my-5 rounded-xl shadow-lg">
                 <Skeleton variant="rectangular" height={200} />
@@ -80,7 +78,18 @@ const UserTickets = () => {
               </Card>
             </Grid>
           ))
-        : events.map((eventItem, index) => {
+        ) : events.length === 0 ? (
+          <Grid item xs={12}>
+            <Typography
+              variant="h6"
+              align="center"
+              style={{ marginTop: "20px", color: "gray" }}
+            >
+              No data available
+            </Typography>
+          </Grid>
+        ) : (
+          events.map((eventItem, index) => {
             const { event, totalPrice, status } = eventItem;
             return (
               <Grid item xs={12} sm={6} md={4} key={index}>
@@ -125,54 +134,60 @@ const UserTickets = () => {
                 </Card>
               </Grid>
             );
-          })}
+          })
+        )}
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Event Details</DialogTitle>
-        <DialogContent>
-          {currentEvent && (
-            <>
-              <Typography variant="h6" className="font-bold text-primary">
-                {currentEvent.event.title}
-              </Typography>
-              <Typography variant="body2" className="text-gray-600">
-                {currentEvent.event.description}
-              </Typography>
-              <Typography variant="body2" className="text-gray-600">
-                Location: {currentEvent.event.location.venue},{" "}
-                {currentEvent.event.location.city},{" "}
-                {currentEvent.event.location.country}
-              </Typography>
-              <Typography variant="body2" className="text-gray-600">
-                Date: {new Date(currentEvent.event.date).toLocaleDateString()}
-              </Typography>
-              <Typography variant="body2" className="text-gray-600">
-                Time: {currentEvent.event.time}
-              </Typography>
-              <Typography variant="body2" className="text-gray-600">
-                Status: {currentEvent.status}
-              </Typography>
-              <Typography variant="body2" className="text-primary">
-                Total Price: ${currentEvent.totalPrice}
-              </Typography>
-              <Typography variant="body2" className="text-gray-600">
-                Tickets:
-              </Typography>
-              {currentEvent.ticketDetails.map((ticket, idx) => (
-                <Typography key={idx} variant="body2" className="text-gray-600">
-                  {`${ticket.type} - Quantity: ${ticket.quantity}, Price: $${ticket.price}`}
+        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+          <DialogTitle>Event Details</DialogTitle>
+          <DialogContent>
+            {currentEvent && (
+              <>
+                <Typography variant="h6" className="font-bold text-primary">
+                  {currentEvent.event.title}
                 </Typography>
-              ))}
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Grid>
+                <Typography variant="body2" className="text-gray-600">
+                  {currentEvent.event.description}
+                </Typography>
+                <Typography variant="body2" className="text-gray-600">
+                  Location: {currentEvent.event.location.venue},{" "}
+                  {currentEvent.event.location.city},{" "}
+                  {currentEvent.event.location.country}
+                </Typography>
+                <Typography variant="body2" className="text-gray-600">
+                  Date: {new Date(currentEvent.event.date).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" className="text-gray-600">
+                  Time: {currentEvent.event.time}
+                </Typography>
+                <Typography variant="body2" className="text-gray-600">
+                  Status: {currentEvent.status}
+                </Typography>
+                <Typography variant="body2" className="text-primary">
+                  Total Price: ${currentEvent.totalPrice}
+                </Typography>
+                <Typography variant="body2" className="text-gray-600">
+                  Tickets:
+                </Typography>
+                {currentEvent.ticketDetails.map((ticket, idx) => (
+                  <Typography
+                    key={idx}
+                    variant="body2"
+                    className="text-gray-600"
+                  >
+                    {`${ticket.type} - Quantity: ${ticket.quantity}, Price: $${ticket.price}`}
+                  </Typography>
+                ))}
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Grid>
+    </>
   );
 };
 

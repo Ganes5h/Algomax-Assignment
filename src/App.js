@@ -43,6 +43,7 @@ function App() {
               <>
                 <PlatformNavbar />
                 <Home />
+                <FooterSection />
               </>
             }
           />
@@ -53,6 +54,7 @@ function App() {
               <>
                 <PlatformNavbar />
                 <Register />
+                <FooterSection />
               </>
             }
           />
@@ -61,7 +63,8 @@ function App() {
             element={
               <>
                 <PlatformNavbar />
-                <Login />/
+                <Login />
+                <FooterSection />
               </>
             }
           />
@@ -72,6 +75,7 @@ function App() {
                 {/* <ProtectedLayoutUser> */}
                 <PlatformNavbar />
                 <GetAllEvents />
+                <FooterSection />
                 {/* </ProtectedLayoutUser> */}
               </>
             }
@@ -83,6 +87,7 @@ function App() {
                 {/* <ProtectedLayoutUser> */}
                 <PlatformNavbar />
                 <UserTickets />
+                <FooterSection />
                 {/* </ProtectedLayoutUser> */}
               </>
             }
@@ -94,6 +99,7 @@ function App() {
               <>
                 <PlatformNavbar />
                 <TenantRegisterStepper />
+                <FooterSection />
               </>
             }
           />
@@ -122,6 +128,7 @@ function App() {
               <>
                 <PlatformNavbar />
                 <TenantLogin />
+                <FooterSection />
               </>
             }
           />
