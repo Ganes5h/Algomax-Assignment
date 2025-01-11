@@ -196,10 +196,14 @@ const uploadSingleDocument = (req, res) => {
         .json({ message: "File upload error.", error: err.message });
     }
 
-    const { tenantId, companyName, registrationNumber, documentType } =
-      req.body;
+    const { tenantId, taxId, companyName, registrationNumber, documentType } = req.body;
 
     try {
+      // Check if taxId is provided
+      if (!taxId) {
+        return res.status(400).json({ message: "Tax ID is required." });
+      }
+
       // Check if tenant exists
       const tenant = await Tenant.findById(tenantId);
       if (!tenant) {
@@ -210,6 +214,7 @@ const uploadSingleDocument = (req, res) => {
       const documentUrl = `/uploads/kycDocuments/${req.file.filename}`;
       const newKYC = await TenantKYC.create({
         tenant: tenantId,
+        taxId, // Added this line to include taxId
         companyName,
         registrationNumber,
         documentType,
@@ -220,9 +225,6 @@ const uploadSingleDocument = (req, res) => {
       tenant.kycDetails = newKYC._id;
       tenant.status = "pending";
       await tenant.save();
-
-      // Send email notification
-      sendKYCNotificationEmail(tenantId, companyName);
 
       res.status(201).json({
         message: "KYC document uploaded successfully.",
@@ -236,6 +238,7 @@ const uploadSingleDocument = (req, res) => {
     }
   });
 };
+
 
 // Send an email to the Tenant organization
 // const nodemailer = require("nodemailer");

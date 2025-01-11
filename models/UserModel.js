@@ -51,11 +51,11 @@ const TenantKYCSchema = new mongoose.Schema(
       required: [true, "Registration number is required"],
       unique: true,
     },
-    // taxId: {
-    //   type: String,
-    //   required: [true, "Tax ID is required"],
-    //   unique: true,
-    // },
+    taxId: {
+      type: String,
+      required: [true, "Tax ID is required"],
+      unique: true,
+    },
     documentType: {
       type: String,
       enum: {
